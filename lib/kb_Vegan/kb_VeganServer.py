@@ -338,10 +338,10 @@ class Application(object):
         self.serverlog.set_log_level(6)
         self.rpc_service = JSONRPCServiceCustom()
         self.method_authentication = dict()
-        self.rpc_service.add(impl_kb_Vegan.run_kb_Vegan,
-                             name='kb_Vegan.run_kb_Vegan',
+        self.rpc_service.add(impl_kb_Vegan.run_mds,
+                             name='kb_Vegan.run_mds',
                              types=[dict])
-        self.method_authentication['kb_Vegan.run_kb_Vegan'] = 'required'  # noqa
+        self.method_authentication['kb_Vegan.run_mds'] = 'required'  # noqa
         self.rpc_service.add(impl_kb_Vegan.status,
                              name='kb_Vegan.status',
                              types=[dict])
