@@ -52,8 +52,11 @@ class kb_VeganTest(unittest.TestCase):
             cls.wsClient.delete_workspace({'workspace': cls.wsName})
             print('Test workspace was deleted')
 
+
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
-    def test_your_method(self):
+    # Uncomment to skip this test
+    @unittest.skip("skipped test_run_mds_with_objref")
+    def test_run_mds_with_objref(self):
         # Prepare test objects in workspace if needed using
         # self.getWsClient().save_objects({'workspace': self.getWsName(),
         #                                  'objects': []})
@@ -66,3 +69,21 @@ class kb_VeganTest(unittest.TestCase):
         ret = self.serviceImpl.run_mds(self.ctx, {'workspace_name': self.wsName,
                                                   'input_obj_ref': '40925/Incubation-16S',
                                                   'mds_matrix_name': 'output_mds_matrix'})
+
+    # Uncomment to skip this test
+    # @unittest.skip("skipped test_run_mds_with_file")
+    def test_run_mds_with_file(self):
+        # Prepare test objects in workspace if needed using
+        # self.getWsClient().save_objects({'workspace': self.getWsName(),
+        #                                  'objects': []})
+        #
+        # Run your method by
+        # ret = self.getImpl().your_method(self.getContext(), parameters...)
+        #
+        # Check returned data with
+        # self.assertEqual(ret[...], ...) or other unittest methods
+        ret = self.serviceImpl.run_mds(self.ctx, {'workspace_name': self.wsName,
+                                                  'datafile': 'otu_samples.txt',
+                                                  'mds_matrix_name': 'output_mds_matrix'})
+
+

@@ -26,7 +26,7 @@ from installed_clients.KBaseReportClient import KBaseReport
 
 class MDSUtils:
 
-    R_BIN = '/kb/deployment/bin/'
+    R_BIN = '/kb/deployment/bin'
     VEGAN_OUT_DIR = 'Vegan_output'
     PARAM_IN_WS = 'output_workspace'
     PARAM_IN_OTU_FILE = 'otu_file'
@@ -70,22 +70,13 @@ class MDSUtils:
         if not data_file_path:
             return ''
 
-        mds_rscript = 'mds_script.R'
+        mds_cfg = 'distance="bray",k =2,trymax=20,autotransform =TRUE,noshare=0.1,expand=TRUE,trace=1,plot=FALSE'
 
-        output_directory = os.path.join(self.working_dir, str(uuid.uuid4()))
-        self._mkdir_p(output_directory)
-        rscrpt_file_path = os.path.join(output_directory, mds_rscript)
-
-        mds_cfg = 'distance = "bray", k = 2, trymax = 20, autotransform =TRUE,' + \
-                  'noshare = 0.1, expand = TRUE, trace = 1, plot = FALSE,' + \
-                  'previous.best'
-
-        mds_scrpt = 'library(Vegan)\n'
-        mds_scrpt = 'library(jsonlite)\n'
-        mds_scrpt += 'vg_data <- read.table(' + data_file_path + \
-                     ', header=TRUE, row.names=1, sep="\t")\n'
+        mds_scrpt = 'library(vegan)\n'
+        mds_scrpt += 'library(jsonlite)\n'
+        mds_scrpt += 'vg_data <- read.table("' + data_file_path + '", header=TRUE,row.names=1,sep="\t")\n'
         # remove the last (taxonomy) column
-        mds_scrpt += 'vg_data<-vg_data[,1:dim(mydata)[2]-1]\n'
+        # mds_scrpt += 'vg_data<-vg_data[,1:dim(mydata)[2]-1]\n'
         # Function metaMDS returns an object of class metaMDS.
         mds_scrpt += 'vg_data.mds <- metaMDS(vg_data,' + mds_cfg + ')\n'
         mds_scrpt += 'vg_data.mds\n'
@@ -106,23 +97,29 @@ class MDSUtils:
 
         # save the results to the current dir
         # Write CSV in R
-        mds_scrpt += 'write.csv(mds_data, file="mds_data.csv",row.names=TRUE, na="")\n'
-        mds_scrpt += 'write_json(mds_data, file="mds_data.json",pretty = TRUE, na = FALSE, auto_unbox = FALSE)\n'
-        mds_scrpt += 'write.csv(variableScores, file="species_ordination.csv",row.names=TRUE, na="")\n'
-        mds_scrpt += 'write.csv(variableScores, file="species_ordination.json",pretty = TRUE, na = FALSE, auto_unbox = FALSE)\n'
-        mds_scrpt += 'write.csv(mds_data, file="site_ordination.csv",row.names=TRUE, na="")\n'
-        mds_scrpt += 'write.csv(mds_data, file="site_ordination.json",pretty = TRUE, na = FALSE, auto_unbox = FALSE)\n'
+        mds_scrpt += 'write.csv(mds_data,file="mds_data.csv",row.names=TRUE,na="")\n'
+        mds_scrpt += 'write_json(mds_data,file="mds_data.json",pretty=TRUE,na=FALSE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write.csv(variableScores,file="species_ordination.csv",row.names=TRUE,na="")\n'
+        mds_scrpt += 'write.csv(variableScores,file="species_ordination.json",pretty=TRUE,na=FALSE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write.csv(mds_data,file="site_ordination.csv",row.names=TRUE,na="")\n'
+        mds_scrpt += 'write.csv(mds_data,file="site_ordination.json",pretty=TRUE,na=FALSE,auto_unbox=FALSE)\n'
         
-        mds_scrpt += 'df <- data.frame(item_names=c("stress", "distance_metric", "converged",'
-        mds_scrpt += '"dimesions", "trials", "call"),'
-        mds_scrpt += 'item_values=c(stress, dist_metric, converged, dims, tries, call))\n'
-        mds_scrpt += 'write.csv(df, file="others.csv", row.names=TRUE)\n'
-        mds_scrpt += 'write_json(df, file="others.json", pretty = TRUE, na = FALSE, auto_unbox = FALSE)\n'
+        mds_scrpt += 'df <- data.frame(item_names=c("stress","distance_metric","converged",'
+        mds_scrpt += '"dimesions","trials","call"),'
+        mds_scrpt += 'item_values=c(stress,dist_metric,converged, dims,tries,call))\n'
+        mds_scrpt += 'write.csv(df,file="others.csv",row.names=TRUE)\n'
+        mds_scrpt += 'write_json(df,file="others.json",pretty=TRUE,na=FALSE,auto_unbox=FALSE)\n'
 
         # save mds plot
-        mds_scrpt += 'bmp(file="saving_mds_plog", width=6, height=4, units="in", res=100)\n'
-        mds_scrpt += 'plot(vg_data.mds, type="n", display="sites")\n'
+        mds_scrpt += 'bmp(file="saving_mds_plot",width=6,height=4,units="in",res=100)\n'
+        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
         mds_scrpt += 'dev.off()\n'
+
+        mds_rscript = 'mds_script.R'
+
+        output_directory = os.path.join(self.working_dir, str(uuid.uuid4()))
+        self._mkdir_p(output_directory)
+        rscrpt_file_path = os.path.join(output_directory, mds_rscript)
 
         with open(rscrpt_file_path, 'w') as r_file:
             r_file.write(mds_scrpt)
@@ -135,9 +132,9 @@ class MDSUtils:
         if not result_dir:
             result_dir = self.working_dir
 
-        rcmd = [os.path.join(R_BIN, 'Rscript')]
+        rcmd = [os.path.join(self.R_BIN, 'R')]
         rcmd.append('-e')
-        rcmd.append(rfile_with_path)
+        rcmd.append(rfile_name)
 
         exitCode = subprocess.call(rcmd, cwd=result_dir, stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -629,7 +626,7 @@ class MDSUtils:
         :param dimension: compute correlation on column or row, one of ['col', 'row']
         """
 
-        logging.info('--->\nrunning NetworkUtil.build_network\n' +
+        logging.info('--->\nrunning mds with an object ref\n' +
                      'params:\n{}'.format(json.dumps(params, indent=1)))
 
         self._validate_run_mds_params(params)
@@ -686,6 +683,30 @@ class MDSUtils:
                                                   n_components)
 
         returnVal.update(report_output)
+
+        return returnVal
+
+    def run_mds_with_file(self, params):
+        """
+        run_mds: perform MDS analysis on matrix
+        :param input_obj_ref: object reference of a matrix
+        :param workspace_name: the name of the workspace
+        :param mds_matrix_name: name of MDS (KBaseExperiments.MDSMatrix) object
+        :param n_components - dimentionality of the reduced space (default 2)
+        :param dimension: compute correlation on column or row, one of ['col', 'row']
+        """
+
+        logging.info('--->\nrunning mds with an input file\n' +
+                     'params:\n{}'.format(json.dumps(params, indent=1)))
+
+        rscrpt_file = self._build_rMDS_script(params)
+        logging.info('--->\nR script file has been written to {}'.format(rscrpt_file))
+
+        exitCode = self._execute_r_script(rscrpt_file)
+
+        returnVal = {'mds_ref': None,
+		     'report_name': None,
+                     'report_ref': None}
 
         return returnVal
 
