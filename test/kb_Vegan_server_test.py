@@ -63,5 +63,6 @@ class kb_VeganTest(unittest.TestCase):
         #
         # Check returned data with
         # self.assertEqual(ret[...], ...) or other unittest methods
-        ret = self.serviceImpl.run_kb_Vegan(self.ctx, {'workspace_name': self.wsName,
-                                                             'parameter_1': 'Hello World!'})
+        ret = self.serviceImpl.run_mds(self.ctx, {'workspace_name': self.wsName,
+                                                  'input_obj_ref': '40925/Incubation-16S',
+                                                  'mds_matrix_name': 'output_mds_matrix'})
