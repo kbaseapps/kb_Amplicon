@@ -76,8 +76,8 @@ class kb_Vegan:
         # ctx is the context object
         # return variables are: returnVal
         #BEGIN run_mds
-        #returnVal = self.mds_util.run_mds(params)
-        returnVal = self.mds_util.run_mds_with_file(params)
+        returnVal = self.mds_util.run_mds(params)
+        #returnVal = self.mds_util.run_mds_with_file(params)
         #END run_mds
 
         # At some point might do deeper type checking...

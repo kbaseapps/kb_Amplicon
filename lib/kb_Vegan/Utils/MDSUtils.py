@@ -70,8 +70,10 @@ class MDSUtils:
         if not data_file_path:
             return ''
 
-        shutil.copyfile(data_file_path,
-                        os.path.join(self.output_dir, os.path.basename(data_file_path)))
+        exists = os.path.isfile(os.path.join(self.output_dir, os.path.basename(data_file_path)))
+        if not exists:
+            shutil.copyfile(data_file_path,
+                            os.path.join(self.output_dir, os.path.basename(data_file_path)))
 
         n_components = params.get('n_components', 2)
         max_iter = params.get('max_iter', 300)
@@ -651,6 +653,24 @@ class MDSUtils:
         :param max_iter: maximum iterations allowed
         :param metric: indication of running metric or non-metric MDS
         :param distance_metric: distance the ordination will be performed on, default to "bray"
+
+        The metaMDS routine in R vegan library has the useful default behavior of following
+        the ordination with a rotation via principal components analysis such that MDS
+        axis 1 reflects the principal source of variation, and so on, as is characteristic of
+        eigenvalue methods.
+        Procrustes rotation--The minimum sum of squares is called the root mean square error (rmse).
+        The smaller the rmse, the more similar the two configurations are.
+        Two final configurations are considered to have converged (arrived at essentially the same
+        solution) when the rmse is less than 0.01, and no single residual value exceeds 0.005.
+        Procrustes analysis thereby provides a mechanism for determining when to stop repeatedly
+        re-running the analysis - stop when there is convergence as measured by procrustes rmse.
+        # for ecological data, samples should be standardized by sample size to avoid ordinations
+        # that reflect primarily sample size unless the input matrix has already been standardized
+        # The Wisconsin double standarization is done automatically following the square transformation. 
+        # Generate a distance (dissimiliarity) matrix from the multivariate data
+        # Bray-Curtis dissimilarity matrix
+        # if distance_metric == 'bray_curtis', call metaMDS with the default Bray distance setting
+        # else: # euclidean
         """
 
         logging.info('--->\nrunning mds with an object ref\n' +
@@ -661,48 +681,47 @@ class MDSUtils:
         input_obj_ref = params.get('input_obj_ref')
         workspace_name = params.get('workspace_name')
         mds_matrix_name = params.get('mds_matrix_name')
-
         n_components = int(params.get('n_components', 2))
-        dimension = params.get('dimension', 'row')
 
         res = self.dfu.get_objects({'object_refs': [input_obj_ref]})['data'][0]
         obj_data = res['data']
+        obj_name = res['info'][1]
         obj_type = res['info'][2]
 
-        self._validate_mds_matrix(obj_data, dimension,
-                                  params.get('color_marker_by'), params.get('scale_size_by'))
+        max_size = len(obj_data['data']['col_ids'])
+        if n_components > max_size:
+            raise ValueError('Number of components should be less than number of samples')
 
         if "KBaseMatrices" in obj_type:
+            # create the input file from obj_data
+            matrix_tab = obj_data['data']['values']
+            row_ids = obj_data['data']['row_ids']
+            col_ids = obj_data['data']['col_ids']
+            matrix_df = pd.DataFrame(matrix_tab, index=row_ids, columns=col_ids)
 
-            (rotation_matrix_df, components_df, explained_variance,
-             explained_variance_ratio, singular_values) = self._project_clusters(input_obj_ref,
-                                                                                 n_components,
-                                                                                 dimension)
+            matrix_data_file = os.path.join(self.output_dir, obj_name + '.csv')
+            with open(matrix_data_file, 'w') as m_file:
+                matrix_df.to_csv(m_file, sep='\t')
+
+            # np.savetxt(matrix_data_file, matrix_data, fmt="%d", delimiter="\t")
+            params['datafile'] = matrix_data_file
+            self.run_mds_with_file(params)
         else:
             err_msg = 'Ooops! [{}] is not supported.\n'.format(obj_type)
-            err_msg += 'Please supply KBaseMatrices object'
+            err_msg += 'Please provide a KBaseMatrices object'
             raise ValueError("err_msg")
 
+        returnVal = {'mds_ref': None,
+		     'report_name': None,
+                     'report_ref': None}
+
+        """
         mds_ref = self._save_mds_matrix(workspace_name, input_obj_ref, mds_matrix_name,
                                         rotation_matrix_df, components_df, explained_variance,
                                         explained_variance_ratio, singular_values,
                                         n_components, dimension)
 
-        plot_mds_matrix = self._append_instance_group(rotation_matrix_df.copy(), obj_data,
-                                                      dimension)
-
-        if params.get('color_marker_by'):
-            plot_mds_matrix = self._build_color_mds_matrix(
-                                            plot_mds_matrix, obj_data, dimension,
-                                            params.get('color_marker_by').get('attribute_color')[0])
-
-        if params.get('scale_size_by'):
-            plot_mds_matrix = self._build_size_mds_matrix(
-                                            plot_mds_matrix, obj_data, dimension,
-                                            params.get('scale_size_by').get('attribute_size')[0])
-
         returnVal = {'mds_ref': mds_ref}
-
         report_output = self._generate_mds_report(mds_ref,
                                                   self._plot_mds_matrix(plot_mds_matrix,
                                                                         n_components),
@@ -710,7 +729,7 @@ class MDSUtils:
                                                   n_components)
 
         returnVal.update(report_output)
-
+        """
         return returnVal
 
     def run_mds_with_file(self, params):
