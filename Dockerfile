@@ -36,6 +36,7 @@ RUN apt-get update
 RUN apt-get install -y r-base r-base-dev
 
 RUN cp /usr/bin/R /kb/deployment/bin/.
+RUN cp /usr/bin/Rscript /kb/deployment/bin/.
 
 ## Install packages are available for ecologists
 RUN Rscript -e "install.packages('vegan')"

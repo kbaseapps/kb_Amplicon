@@ -68,6 +68,7 @@ class kb_VeganTest(unittest.TestCase):
         # self.assertEqual(ret[...], ...) or other unittest methods
         ret = self.serviceImpl.run_mds(self.ctx, {'workspace_name': self.wsName,
                                                   'input_obj_ref': '40925/Incubation-16S',
+                                                  'n_components': 3,
                                                   'mds_matrix_name': 'output_mds_matrix'})
 
     # Uncomment to skip this test
@@ -83,7 +84,8 @@ class kb_VeganTest(unittest.TestCase):
         # Check returned data with
         # self.assertEqual(ret[...], ...) or other unittest methods
         ret = self.serviceImpl.run_mds(self.ctx, {'workspace_name': self.wsName,
-                                                  'datafile': 'otu_samples.txt',
+                                                  'datafile': 'smpl_16s.csv',
+                                                  'n_components': 3,
                                                   'mds_matrix_name': 'output_mds_matrix'})
 
 

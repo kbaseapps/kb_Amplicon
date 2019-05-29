@@ -70,13 +70,19 @@ class MDSUtils:
         if not data_file_path:
             return ''
 
-        mds_cfg = 'distance="bray",k =2,trymax=20,autotransform =TRUE,noshare=0.1,expand=TRUE,trace=1,plot=FALSE'
+        shutil.copyfile(data_file_path,
+                        os.path.join(self.output_dir, os.path.basename(data_file_path)))
+
+        n_components = params.get('n_components', 2)
+
+        mds_cfg = 'distance="bray",try=20,trymax=20,autotransform=TRUE,noshare=0.1,expand=TRUE,'+\
+                  'trace=1,plot=FALSE,engine=c("monoMDS","isoMDS"),k=' + str(n_components)
 
         mds_scrpt = 'library(vegan)\n'
         mds_scrpt += 'library(jsonlite)\n'
-        mds_scrpt += 'vg_data <- read.table("' + data_file_path + '", header=TRUE,row.names=1,sep="\t")\n'
+        mds_scrpt += 'vg_data <- read.table("' + data_file_path + '",header=TRUE,row.names=1,sep="")\n'
         # remove the last (taxonomy) column
-        # mds_scrpt += 'vg_data<-vg_data[,1:dim(mydata)[2]-1]\n'
+        # mds_scrpt += 'vg_data<-vg_data[,1:dim(vg_data)[2]-1]\n'
         # Function metaMDS returns an object of class metaMDS.
         mds_scrpt += 'vg_data.mds <- metaMDS(vg_data,' + mds_cfg + ')\n'
         mds_scrpt += 'vg_data.mds\n'
@@ -86,40 +92,40 @@ class MDSUtils:
         # 2) store site ordination
         mds_scrpt += 'sampleScores <- vg_data.mds$points\n'
         mds_scrpt += 'stress <- vg_data.mds$stress\n'
-        mds_scrpt += 'data <- vg_data.mds$data\n'
         mds_scrpt += 'dist_metric <- vg_data.mds$distance\n'
+        mds_scrpt += 'dist_matrix <- vg_data.mds$diss\n'
+        mds_scrpt += 'dist_call <- vg_data.mds$distcall\n'
         mds_scrpt += 'converged <- vg_data.mds$converged\n'
-        mds_scrpt += 'dims <- vg_data.mds$dims\n'
+        mds_scrpt += 'dims <- vg_data.mds$ndim\n'
         mds_scrpt += 'tries <- vg_data.mds$tries\n'
+        mds_scrpt += 'maxits <- vg_data.mds$maxits\n'
         mds_scrpt += 'func_call <- vg_data.mds$call\n'
         mds_scrpt += 'mds_data <- vg_data.mds$data\n'
-        mds_scrpt += 'converged <- vg_data.mds$converged\n'
 
         # save the results to the current dir
         # Write CSV in R
-        mds_scrpt += 'write.csv(mds_data,file="mds_data.csv",row.names=TRUE,na="")\n'
-        mds_scrpt += 'write_json(mds_data,file="mds_data.json",pretty=TRUE,na=FALSE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write_json(dist_matrix,path="dist_matrix.json",pretty=TRUE,auto_unbox=FALSE)\n'
         mds_scrpt += 'write.csv(variableScores,file="species_ordination.csv",row.names=TRUE,na="")\n'
-        mds_scrpt += 'write.csv(variableScores,file="species_ordination.json",pretty=TRUE,na=FALSE,auto_unbox=FALSE)\n'
-        mds_scrpt += 'write.csv(mds_data,file="site_ordination.csv",row.names=TRUE,na="")\n'
-        mds_scrpt += 'write.csv(mds_data,file="site_ordination.json",pretty=TRUE,na=FALSE,auto_unbox=FALSE)\n'
-        
-        mds_scrpt += 'df <- data.frame(item_names=c("stress","distance_metric","converged",'
-        mds_scrpt += '"dimesions","trials","call"),'
-        mds_scrpt += 'item_values=c(stress,dist_metric,converged, dims,tries,call))\n'
-        mds_scrpt += 'write.csv(df,file="others.csv",row.names=TRUE)\n'
-        mds_scrpt += 'write_json(df,file="others.json",pretty=TRUE,na=FALSE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write_json(variableScores,path="species_ordination.json",pretty=TRUE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write.csv(sampleScores,file="site_ordination.csv",row.names=TRUE,na="")\n'
+        mds_scrpt += 'write_json(sampleScores,path="site_ordination.json",pretty=TRUE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'item_name=c("stress","distance_metric","dist_call","converged","dimesions","trials","maxits")\n'
+        mds_scrpt += 'item_value=c(stress,dist_metric,dist_call,converged,dims,tries,maxits)\n' 
+        mds_scrpt += 'df <- data.frame(item_name,item_value,stringsAsFactors=FALSE)\n'
+        mds_scrpt += 'write_json(toJSON(df),path="others.json",pretty=TRUE,auto_unbox=FALSE)\n'
 
         # save mds plot
-        mds_scrpt += 'bmp(file="saving_mds_plot",width=6,height=4,units="in",res=100)\n'
+        mds_scrpt += 'bmp(file="saving_mds_plot.bmp",width=6,height=4,units="in",res=100)\n'
         mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
+        mds_scrpt += 'points(vg_data.mds)\n'
+        mds_scrpt += 'dev.off()\n'
+        mds_scrpt += 'pdf(file="saving_mds_plot.pdf",width=6,height=4)\n'
+        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
+        mds_scrpt += 'points(vg_data.mds)\n'
         mds_scrpt += 'dev.off()\n'
 
         mds_rscript = 'mds_script.R'
-
-        output_directory = os.path.join(self.working_dir, str(uuid.uuid4()))
-        self._mkdir_p(output_directory)
-        rscrpt_file_path = os.path.join(output_directory, mds_rscript)
+        rscrpt_file_path = os.path.join(self.output_dir, mds_rscript)
 
         with open(rscrpt_file_path, 'w') as r_file:
             r_file.write(mds_scrpt)
@@ -132,10 +138,10 @@ class MDSUtils:
         if not result_dir:
             result_dir = self.working_dir
 
-        rcmd = [os.path.join(self.R_BIN, 'R')]
-        rcmd.append('-e')
+        rcmd = [os.path.join(self.R_BIN, 'Rscript')]
         rcmd.append(rfile_name)
 
+        logging.info('Running script in current working directory: {}'.format(result_dir))
         exitCode = subprocess.call(rcmd, cwd=result_dir, stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                    close_fds=True)
@@ -614,6 +620,8 @@ class MDSUtils:
 
         self.data_util = DataUtil(config)
         self.dfu = DataFileUtil(self.callback_url)
+        self.output_dir = os.path.join(self.working_dir, self.VEGAN_OUT_DIR)
+        self._mkdir_p(self.output_dir)
 
 
     def run_mds(self, params):
