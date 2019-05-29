@@ -74,9 +74,15 @@ class MDSUtils:
                         os.path.join(self.output_dir, os.path.basename(data_file_path)))
 
         n_components = params.get('n_components', 2)
+        max_iter = params.get('max_iter', 300)
+        run_metric = True if params.get('metric', 0) else False
+        dist_metric = params.get('distance_metric', 'bray')
 
-        mds_cfg = 'distance="bray",try=20,trymax=20,autotransform=TRUE,noshare=0.1,expand=TRUE,'+\
-                  'trace=1,plot=FALSE,engine=c("monoMDS","isoMDS"),k=' + str(n_components)
+        mds_cfg = 'distance="' + dist_metric + '",try=20,trymax=' + str(max_iter) + \
+                  ',autotransform=TRUE,noshare=0.1,expand=TRUE,trace=1,' + \
+                  'plot=FALSE,engine=c("monoMDS","isoMDS"),k=' + str(n_components)
+        if run_metric:
+            mds_cfg += 'metric=True'
 
         mds_scrpt = 'library(vegan)\n'
         mds_scrpt += 'library(jsonlite)\n'
@@ -132,7 +138,10 @@ class MDSUtils:
         return rscrpt_file_path
 
     def _execute_r_script(self, rfile_name):
-        logging.info('Calling R')
+        """
+        _execute_r_script: Calling the Rscript executable to run the R script in rfile_name
+        """
+        logging.info('Calling R......')
 
         result_dir = os.path.dirname(rfile_name)
         if not result_dir:
@@ -141,18 +150,26 @@ class MDSUtils:
         rcmd = [os.path.join(self.R_BIN, 'Rscript')]
         rcmd.append(rfile_name)
 
-        logging.info('Running script in current working directory: {}'.format(result_dir))
-        exitCode = subprocess.call(rcmd, cwd=result_dir, stdin=subprocess.PIPE,
-                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                   close_fds=True)
-
-        if (exitCode == 0):
-            logging.info('\n' + ' '.join(rcmd) + ' was executed successfully, exit code was: ' +
-                  str(exitCode))
-            logging.info("Finished calling R")
-        else:
-            logging.info('Error running command: ' + ' '.join(rcmd) + 'Exit Code: ' +
-                  str(exitCode))
+        logging.info('Running metaMDS script in current working directory: {}'.format(result_dir))
+        exitCode = 0
+        try:
+            complete_proc = subprocess.run(rcmd, cwd=result_dir, stdin=subprocess.PIPE,
+                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                            close_fds=True)
+            exitCode = complete_proc.returncode
+            if (exitCode == 0):
+                logging.info('\n{}'.format(complete_proc.stdout))
+                logging.info('\n' + ' '.join(rcmd) + ' was executed successfully, exit code was: ' +
+                    str(exitCode))
+                logging.info("Finished calling R.")
+            else:
+                logging.info('Error running command: ' + ' '.join(rcmd) + 'Exit Code: ' +
+                    str(exitCode))
+                logging.info('\n{}'.format(complete_proc.stderr))
+        except subprocess.CalledProcessError as subE:
+            pass
+            exitCode = -99
+            logging.info('Caught subprocess.CalledProcessError {}'.format(subE))
 
         return exitCode
 
@@ -631,7 +648,9 @@ class MDSUtils:
         :param workspace_name: the name of the workspace
         :param mds_matrix_name: name of MDS (KBaseExperiments.MDSMatrix) object
         :param n_components - dimentionality of the reduced space (default 2)
-        :param dimension: compute correlation on column or row, one of ['col', 'row']
+        :param max_iter: maximum iterations allowed
+        :param metric: indication of running metric or non-metric MDS
+        :param distance_metric: distance the ordination will be performed on, default to "bray"
         """
 
         logging.info('--->\nrunning mds with an object ref\n' +
@@ -696,12 +715,14 @@ class MDSUtils:
 
     def run_mds_with_file(self, params):
         """
-        run_mds: perform MDS analysis on matrix
-        :param input_obj_ref: object reference of a matrix
+        run_mds_with_file: perform MDS analysis on matrix
+        :param datafile: a file that contains the matrix data
         :param workspace_name: the name of the workspace
         :param mds_matrix_name: name of MDS (KBaseExperiments.MDSMatrix) object
         :param n_components - dimentionality of the reduced space (default 2)
-        :param dimension: compute correlation on column or row, one of ['col', 'row']
+        :param max_iter: maximum iterations allowed
+        :param metric: indication of running metric or non-metric MDS
+        :param distance_metric: distance the ordination will be performed on, default to "bray"
         """
 
         logging.info('--->\nrunning mds with an input file\n' +

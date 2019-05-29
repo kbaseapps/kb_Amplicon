@@ -67,28 +67,18 @@ module kb_Vegan {
         workspace_name: name of the workspace
         mds_matrix_name: name of MDS (KBaseExperiments.MDSMatrix) object (output)
         n_components - desired number of n dimensions is chosen for the ordination (default 2)
-        metric - If True, perform metric MDS; otherwise, perform nonmetric MDS. (default False)
+        metric - Int, if 1, perform metric MDS; otherwise, perform nonmetric MDS. (default 0)
         max_iter - iterations stop once a set number of max_iter iterations have occurred (default 300)
-        eps - relative tolerance with respect to stress at which to declare convergence (default 1e-3)
         distance_metric - distance the ordination will be performed on (Euclidean distance, Manhattan distance (city block distance) or Bray distance) default to Bray distance
-        mds_ordination - can be rotated, inverted, or centered 
-
-        attribute_mapping_obj_ref - associated attribute_mapping_obj_ref
-        scale_size_by - used for MDS plot to scale data size
-        color_marker_by - used for MDS plot to group data
     */
     typedef structure {
         obj_ref input_obj_ref;
         string workspace_name;
         string mds_matrix_name;
         int n_components;
+        int metric;
         int max_iter;
-        float eps;
         string distance_metric;
-        string mds_ordination;
-        obj_ref attribute_mapping_obj_ref;
-        mapping<string, string> scale_size_by;
-        mapping<string, string> color_marker_by;
     } MDSParams;
 
     /* Ouput of the run_mds function

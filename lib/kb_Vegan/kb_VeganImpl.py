@@ -25,7 +25,7 @@ class kb_Vegan:
     ######################################### noqa
     VERSION = "0.0.1"
     GIT_URL = "https://github.com/qzzhang/kb_Vegan.git"
-    GIT_COMMIT_HASH = "5e9593a29470729e93314c6e8e5a314ec08806c9"
+    GIT_COMMIT_HASH = "61bc10978a1e408823c2af0709c73f5af5a496e2"
 
     #BEGIN_CLASS_HEADER
     #END_CLASS_HEADER
@@ -54,25 +54,16 @@ class kb_Vegan:
            workspace_name: name of the workspace mds_matrix_name: name of MDS
            (KBaseExperiments.MDSMatrix) object (output) n_components -
            desired number of n dimensions is chosen for the ordination
-           (default 2) metric - If True, perform metric MDS; otherwise,
-           perform nonmetric MDS. (default False) max_iter - iterations stop
-           once a set number of max_iter iterations have occurred (default
-           300) eps - relative tolerance with respect to stress at which to
-           declare convergence (default 1e-3) distance_metric - distance the
-           ordination will be performed on (Euclidean distance, Manhattan
-           distance (city block distance) or Bray distance) default to Bray
-           distance mds_ordination - can be rotated, inverted, or centered
-           attribute_mapping_obj_ref - associated attribute_mapping_obj_ref
-           scale_size_by - used for MDS plot to scale data size
-           color_marker_by - used for MDS plot to group data) -> structure:
-           parameter "input_obj_ref" of type "obj_ref" (An X/Y/Z style
-           reference), parameter "workspace_name" of String, parameter
-           "mds_matrix_name" of String, parameter "n_components" of Long,
-           parameter "max_iter" of Long, parameter "eps" of Double, parameter
-           "distance_metric" of String, parameter "mds_ordination" of String,
-           parameter "attribute_mapping_obj_ref" of type "obj_ref" (An X/Y/Z
-           style reference), parameter "scale_size_by" of mapping from String
-           to String, parameter "color_marker_by" of mapping from String to
+           (default 2) metric - Int, if 1, perform metric MDS; otherwise,
+           perform nonmetric MDS. (default 0) max_iter - iterations stop once
+           a set number of max_iter iterations have occurred (default 300)
+           distance_metric - distance the ordination will be performed on
+           (Euclidean distance, Manhattan distance (city block distance) or
+           Bray distance) default to Bray distance) -> structure: parameter
+           "input_obj_ref" of type "obj_ref" (An X/Y/Z style reference),
+           parameter "workspace_name" of String, parameter "mds_matrix_name"
+           of String, parameter "n_components" of Long, parameter "metric" of
+           Long, parameter "max_iter" of Long, parameter "distance_metric" of
            String
         :returns: instance of type "MDSOutput" (Ouput of the run_mds function
            mds_ref: object reference (to an object of the MDSMatrix data
