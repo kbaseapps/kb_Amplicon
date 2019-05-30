@@ -113,11 +113,14 @@ class MDSUtils:
 
         # save the results to the current dir
         # Write CSV in R
-        mds_scrpt += 'write_json(dist_matrix,path="dist_matrix.json",pretty=TRUE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write.csv(dist_matrix,file="dist_matrix.csv",row.names=TRUE,na="")\n'
         mds_scrpt += 'write.csv(variableScores,file="species_ordination.csv",row.names=TRUE,na="")\n'
-        mds_scrpt += 'write_json(variableScores,path="species_ordination.json",pretty=TRUE,auto_unbox=FALSE)\n'
         mds_scrpt += 'write.csv(sampleScores,file="site_ordination.csv",row.names=TRUE,na="")\n'
-        mds_scrpt += 'write_json(sampleScores,path="site_ordination.json",pretty=TRUE,auto_unbox=FALSE)\n'
+
+        # Write JSON in R
+        mds_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write_json(toJSON(variableScores),path="species_ordination.json",pretty=TRUE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write_json(toJSON(sampleScores),path="site_ordination.json",pretty=TRUE,auto_unbox=FALSE)\n'
         mds_scrpt += 'item_name=c("stress","distance_metric","dist_call","converged","dimesions","trials","maxits")\n'
         mds_scrpt += 'item_value=c(stress,dist_metric,dist_call,converged,dims,tries,maxits)\n' 
         mds_scrpt += 'df <- data.frame(item_name,item_value,stringsAsFactors=FALSE)\n'
@@ -256,10 +259,10 @@ class MDSUtils:
 
         return mds_df, distance_df
 
-    def _save_mds_matrix(self, workspace_name, input_obj_ref, mds_matrix_name, rotation_matrix_df,
-                         distance_df, n_components, distance_metric):
+    def _save_mds_matrix(self, workspace_name, input_obj_ref, mds_matrix_name,
+                         distance_df, mds_params_df, site_ordin_df, species_ordin_df):
 
-        logging.info('saving MDSMatrix')
+        logging.info('Saving MDSMatrix...')
 
         if not isinstance(workspace_name, int):
             ws_name_id = self.dfu.ws_name_to_id(workspace_name)
@@ -268,13 +271,14 @@ class MDSUtils:
 
         mds_data = {}
 
-        mds_data.update({'rotation_matrix': self._df_to_list(rotation_matrix_df)})
         mds_data.update({'distance_matrix': self._df_to_list(distance_df)})
-        mds_data.update({'mds_parameters': {'n_components': str(n_components),
-                                            'distance_metric': str(distance_metric)}})
+        mds_data.update({'site_ordination': self._df_to_list(site_ordin_df)})
+        mds_data.update({'species_ordination': self._df_to_list(species_ordin_df)})
+        mds_data.update({'mds_parameters': self._df_to_list(mds_params_df)})
         mds_data.update({'original_matrix_ref': input_obj_ref})
+        mds_data.update({'rotation_matrix': self._df_to_list(distance_df)})
 
-        obj_type = 'MDSMatrix'
+        obj_type = 'KBaseExperiments.PCAMatrix'
         info = self.dfu.save_objects({
             "id": ws_name_id,
             "objects": [{
@@ -283,6 +287,8 @@ class MDSUtils:
                 "name": mds_matrix_name
             }]
         })[0]
+
+        return "%s/%s/%s" % (info[6], info[0], info[4])
 
     def _zip_folder(self, folder_path, output_path):
         """
@@ -751,13 +757,15 @@ class MDSUtils:
             raise ValueError("err_msg")
    
         # saving the mds_matrix object
-        """
+        # read mds results from files into data frames
+        dist_matrix_df = pd.read_csv(os.path.join(self.output_dir, "dist_matrix.csv"))
+        mds_params_df = pd.read_json(os.path.join(self.output_dir, "others.json"))
+        site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"))
+        species_ordin_df = pd.read_csv(os.path.join(self.output_dir, "species_ordination.csv"))
+ 
         mds_ref = self._save_mds_matrix(workspace_name, input_obj_ref, mds_matrix_name,
-                                        rotation_matrix_df, components_df, explained_variance,
-                                        explained_variance_ratio, singular_values,
-                                        n_components, dimension)
-        """
-        mds_ref = None
+                                        dist_matrix_df, mds_params_df, site_ordin_df,
+                                        species_ordin_df)
         returnVal = {'mds_ref': mds_ref}
 
         # generating report
