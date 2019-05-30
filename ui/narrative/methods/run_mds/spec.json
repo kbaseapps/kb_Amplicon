@@ -3,24 +3,58 @@
     "authors": [
         "qzhang"
     ],
-    "contact": "",
+    "contact": "http://kbase.us/contact-us/",
     "categories": ["active"],
     "widgets": {
-        "input": null,
-        "output": null
+        "input": "kbaseNarrativeMethodInput",
+        "output": "no-display"
     },
     "parameters": [ 
         {
-            "id": "parameter_1",
-            "optional": true,
+            "id": "input_obj_ref",
+            "optional": false,
             "advanced": false,
             "allow_multiple": false,
             "default_values": [ "" ],
             "field_type": "text",
             "text_options": {
-                "valid_ws_types": [ ]
+                "valid_ws_types": ["KBaseMatrices"]
             }
-        }
+        },
+        {
+            "id" : "n_components",
+            "optional" : false,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : [ "2" ],
+            "field_type" : "text",
+            "text_options" : {
+	    "validate_as": "int"
+            }
+        },
+        {
+            "id" : "max_iter",
+            "optional" : true,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : [ "300" ],
+            "field_type" : "text",
+            "text_options" : {
+	    "validate_as": "int"
+            }
+        },
+        {
+            "id" : "mds_matrix_name",
+            "optional" : false,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : [ "" ],
+            "field_type" : "text",
+            "text_options" : {
+              "valid_ws_types" : ["KBaseExperiments.PCAMatrix"],
+              "is_output_name" : true
+            }
+        }  
     ],
     "behavior": {
         "service-mapping": {
@@ -35,19 +69,38 @@
                     "narrative_system_variable": "workspace_id",
                     "target_property": "workspace_id"
                 },{
-                    "input_parameter": "parameter_1",
-                    "target_property": "parameter_1"
-                }
-            ],
-            "output_mapping": [
-                {
-                    "service_method_output_path": [0,"report_name"],
-                    "target_property": "report_name"
+                    "input_parameter": "input_obj_ref",
+                    "target_property": "input_obj_ref",
+                    "target_type_transform": "resolved-ref"
                 },{
-                    "service_method_output_path": [0,"report_ref"],
-                    "target_property": "report_ref"
-                }
-            ]
+		    "input_parameter" : "n_components",
+		    "target_property" : "n_components"
+		},{
+		  "input_parameter" : "max_iter",
+		  "target_property" : "max_iter"
+		},{
+		  "input_parameter" : "mds_matrix_name",
+		  "target_property" : "mds_matrix_name"
+		}
+            ],
+	    "output_mapping" : [
+		{
+		  "narrative_system_variable": "workspace",
+		  "target_property": "wsName"
+		},{
+		    "service_method_output_path": [0, "mds_ref"],
+		    "target_property": "mds_ref"
+		},{
+		    "service_method_output_path": [0, "report_name"],
+		    "target_property": "report_name"
+		},{
+		    "service_method_output_path": [0, "report_ref"],
+		    "target_property": "report_ref"
+		},{
+		    "constant_value": "16",
+		    "target_property": "report_window_line_height"
+		}
+	      ]
         }
     },
     "job_id_output_field": "docker"
