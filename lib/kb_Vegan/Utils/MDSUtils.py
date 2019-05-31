@@ -131,6 +131,16 @@ class MDSUtils:
         mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
         mds_scrpt += 'points(vg_data.mds)\n'
         mds_scrpt += 'dev.off()\n'
+        mds_scrpt += 'pdf(file="mds_plot_withlabel.pdf",width=6,height=4)\n'
+        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
+        mds_scrpt += 'ordilabel(vg_data.mds,dis="sites",cex=1.2,font=3,fill="hotpink",col="blue")\n'
+        mds_scrpt += 'dev.off()\n'
+        mds_scrpt += 'pdf(file="mds_plot_withcolor.pdf",width=6,height=4)\n'
+        mds_scrpt += 'fig <- ordiplot(vg_data.mds,type="none")\n'
+        mds_scrpt += 'points(fig,"sites",pch=21,col="red",bg="yellow")\n'
+        mds_scrpt += 'points(fig,"species",pch=21,col="green",bg="blue")\n'
+        # mds_scrpt += 'text(fig, "species", col="blue", cex=0.9)\n'
+        mds_scrpt += 'dev.off()\n'
 
         mds_rscript = 'mds_script.R'
         rscrpt_file_path = os.path.join(self.output_dir, mds_rscript)
