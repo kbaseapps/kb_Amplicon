@@ -1,24 +1,15 @@
+
 import errno
-import itertools
 import json
 import logging
 import os
 import shutil
-import sys
 import uuid
 import zipfile
 import re
 import subprocess
 
 import pandas as pd
-import numpy as np
-import plotly.graph_objs as go
-from matplotlib import pyplot as plt
-from plotly.offline import plot
-from sklearn.manifold import MDS
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-# from skbio.stats.distance import DistanceMatrix
 
 from kb_Vegan.Utils.DataUtil import DataUtil
 from installed_clients.DataFileUtilClient import DataFileUtil
@@ -63,7 +54,6 @@ class MDSUtils:
     def _build_rMDS_script(self, params):
         """
         _build_rMDS_script: build a sequence of R command calls according to params
-        
         Note: To run the NMDS, we will use the function metaMDS from the vegan package.
         # The metaMDS function requires only a community-by-species matrix.
         """
@@ -89,7 +79,8 @@ class MDSUtils:
 
         mds_scrpt = 'library(vegan)\n'
         mds_scrpt += 'library(jsonlite)\n'
-        mds_scrpt += 'vg_data <- read.table("' + data_file_path + '",header=TRUE,row.names=1,sep="")\n'
+        mds_scrpt += 'vg_data <- read.table("' + data_file_path + \
+                     '",header=TRUE,row.names=1,sep="")\n'
         # remove the last (taxonomy) column
         # mds_scrpt += 'vg_data<-vg_data[,1:dim(vg_data)[2]-1]\n'
         # Function metaMDS returns an object of class metaMDS.
@@ -114,15 +105,20 @@ class MDSUtils:
         # save the results to the current dir
         # Write CSV in R
         mds_scrpt += 'write.csv(dist_matrix,file="dist_matrix.csv",row.names=TRUE,na="")\n'
-        mds_scrpt += 'write.csv(variableScores,file="species_ordination.csv",row.names=TRUE,na="")\n'
+        mds_scrpt += 'write.csv(variableScores,file="species_ordination.csv",' + \
+                     'row.names=TRUE,na="")\n'
         mds_scrpt += 'write.csv(sampleScores,file="site_ordination.csv",row.names=TRUE,na="")\n'
 
         # Write JSON in R
-        mds_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,auto_unbox=FALSE)\n'
-        mds_scrpt += 'write_json(toJSON(variableScores),path="species_ordination.json",pretty=TRUE,auto_unbox=FALSE)\n'
-        mds_scrpt += 'write_json(toJSON(sampleScores),path="site_ordination.json",pretty=TRUE,auto_unbox=FALSE)\n'
-        mds_scrpt += 'item_name=c("stress","distance_metric","dist_call","converged","dimesions","trials","maxits")\n'
-        mds_scrpt += 'item_value=c(stress,dist_metric,dist_call,converged,dims,tries,maxits)\n' 
+        mds_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,' + \
+                     'auto_unbox=FALSE)\n'
+        mds_scrpt += 'write_json(toJSON(variableScores),path="species_ordination.json",' + \
+                     'pretty=TRUE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write_json(toJSON(sampleScores),path="site_ordination.json",' + \
+                     'pretty=TRUE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'item_name=c("stress","distance_metric","dist_call","converged",' + \
+                     '"dimesions","trials","maxits")\n'
+        mds_scrpt += 'item_value=c(stress,dist_metric,dist_call,converged,dims,tries,maxits)\n'
         mds_scrpt += 'df <- data.frame(item_name,item_value,stringsAsFactors=FALSE)\n'
         mds_scrpt += 'write_json(toJSON(df),path="others.json",pretty=TRUE,auto_unbox=FALSE)\n'
 
@@ -160,21 +156,21 @@ class MDSUtils:
         exitCode = 0
         try:
             complete_proc = subprocess.run(rcmd, cwd=result_dir, stdin=subprocess.PIPE,
-                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                            close_fds=True)
+                                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                           close_fds=True)
             exitCode = complete_proc.returncode
             if (exitCode == 0):
                 logging.info('\n{}'.format(complete_proc.stdout))
-                logging.info('\n' + ' '.join(rcmd) + ' was executed successfully, exit code was: ' +
-                    str(exitCode))
+                logging.info('\n{} was executed successfully, exit code was: {}'.format(
+                    ' '.join(rcmd), str(exitCode)))
                 logging.info("Finished calling R.")
             else:
-                logging.info('Error running command: ' + ' '.join(rcmd) + 'Exit Code: ' +
-                    str(exitCode))
+                logging.info('Error running command: {} Exit Code: '.format(
+                    ' '.join(rcmd), str(exitCode)))
                 logging.info('\n{}'.format(complete_proc.stderr))
-        except subprocess.CalledProcessError as subE:
+        except subprocess.CalledProcessError as sub_e:
             exitCode = -99
-            logging.info('Caught subprocess.CalledProcessError {}'.format(subE))
+            logging.info('Caught subprocess.CalledProcessError {}'.format(sub_e))
 
         return exitCode
 
@@ -233,6 +229,7 @@ class MDSUtils:
         rotation_matrix_data = mds_data.get('rotation_matrix')
         distance_matrix_data = mds_data.get('distance_matrix')
         original_matrix_ref = mds_data.get('original_matrix_ref')
+        dimension = mds_data.get('mds_parameters').get('n_components')
 
         mds_df = self._Matrix2D_to_df(rotation_matrix_data)
         distance_df = None
@@ -241,11 +238,13 @@ class MDSUtils:
 
         if original_matrix_ref:
             logging.info('appending instance group information to mds data frame')
-            obj_data = self.dfu.get_objects({'object_refs': [original_matrix_ref]})['data'][0]['data']
+            obj_data = self.dfu.get_objects(
+                {'object_refs': [original_matrix_ref]})['data'][0]['data']
 
             attributemapping_ref = obj_data.get('{}_attributemapping_ref'.format(dimension))
 
-            am_data = self.dfu.get_objects({'object_refs': [attributemapping_ref]})['data'][0]['data']
+            am_data = self.dfu.get_objects(
+                {'object_refs': [attributemapping_ref]})['data'][0]['data']
 
             attributes = am_data.get('attributes')
             instances = am_data.get('instances')
@@ -313,7 +312,7 @@ class MDSUtils:
                     ziph.write(absolute_path, relative_path)
 
         logging.info("{} created successfully.".format(output_path))
- 
+
     def _generate_output_file_list(self, out_dir):
         """
         _generate_output_file_list: zip result files and generate file_links for report
@@ -347,9 +346,7 @@ class MDSUtils:
         for root, folders, files in os.walk(mds_outdir):
             # Find the image files by their extensions.
             for f in files:
-                if re.match("^[a-zA-Z]+.*\.(jpeg|jpg|bmp|tiff|pdf|ps)$", f):
-                # for p in ['.jpeg', '.jpg', '.bmp', '.tiff','.pdf', '.ps']:
-                #    if p not in f:
+                if re.match('^[a-zA-Z]+.*.(jpeg|jpg|bmp|tiff|pdf|ps)$', f):
                     absolute_path = os.path.join(root, f)
                     logging.info("Adding {} to plot archive.".format(absolute_path))
                     mds_plots.append(absolute_path)
@@ -383,30 +380,6 @@ class MDSUtils:
                             })
         return html_report
 
-    def _generate_mds_report(self, mds_ref, mds_plots, workspace_name, n_components):
-        logging.info('creating report')
-
-        output_html_files = self._generate_mds_html_report(mds_plots, n_components)
-
-        objects_created = list()
-        objects_created.append({'ref': mds_ref,
-                                'description': 'MDS Matrix'})
-
-        report_params = {'message': '',
-                         'workspace_name': workspace_name,
-                         'objects_created': objects_created,
-                         'html_links': output_html_files,
-                         'direct_html_link_index': 0,
-                         'html_window_height': 666,
-                         'report_object_name': 'kb_mds_report_' + str(uuid.uuid4())}
-
-        kbase_report_client = KBaseReport(self.callback_url)
-        output = kbase_report_client.create_extended_report(report_params)
-
-        report_output = {'report_name': output['name'], 'report_ref': output['ref']}
-
-        return report_output
-
     def _generate_mds_report(self, mds_ref, output_dir, workspace_name, n_components):
         logging.info('Creating MDS report...')
 
@@ -433,7 +406,6 @@ class MDSUtils:
 
         return report_output
 
-
     def __init__(self, config):
 
         self.ws_url = config["workspace-url"]
@@ -447,7 +419,6 @@ class MDSUtils:
         self.dfu = DataFileUtil(self.callback_url)
         self.output_dir = os.path.join(self.working_dir, self.VEGAN_OUT_DIR)
         self._mkdir_p(self.output_dir)
-
 
     def run_mds(self, params):
         """
@@ -498,7 +469,7 @@ class MDSUtils:
             err_msg = 'Ooops! [{}] is not supported.\n'.format(obj_type)
             err_msg += 'Please provide a KBaseMatrices object'
             raise ValueError("err_msg")
-   
+
         if exitCode == -99:
             raise ValueError('Caught subprocess.CalledProcessError while calling R.')
 
@@ -508,7 +479,7 @@ class MDSUtils:
         mds_params_df = pd.read_json(os.path.join(self.output_dir, "others.json"))
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"))
         species_ordin_df = pd.read_csv(os.path.join(self.output_dir, "species_ordination.csv"))
- 
+
         mds_ref = self._save_mds_matrix(workspace_name, input_obj_ref, mds_matrix_name,
                                         dist_matrix_df, mds_params_df, site_ordin_df,
                                         species_ordin_df)
@@ -561,4 +532,3 @@ class MDSUtils:
         })
 
         return {'shock_id': package_details['shock_id']}
-
