@@ -173,7 +173,6 @@ class MDSUtils:
                     str(exitCode))
                 logging.info('\n{}'.format(complete_proc.stderr))
         except subprocess.CalledProcessError as subE:
-            pass
             exitCode = -99
             logging.info('Caught subprocess.CalledProcessError {}'.format(subE))
 
@@ -460,24 +459,6 @@ class MDSUtils:
         :param max_iter: maximum iterations allowed
         :param metric: indication of running metric or non-metric MDS
         :param distance_metric: distance the ordination will be performed on, default to "bray"
-
-        The metaMDS routine in R vegan library has the useful default behavior of following
-        the ordination with a rotation via principal components analysis such that MDS
-        axis 1 reflects the principal source of variation, and so on, as is characteristic of
-        eigenvalue methods.
-        Procrustes rotation--The minimum sum of squares is called the root mean square error (rmse).
-        The smaller the rmse, the more similar the two configurations are.
-        Two final configurations are considered to have converged (arrived at essentially the same
-        solution) when the rmse is less than 0.01, and no single residual value exceeds 0.005.
-        Procrustes analysis thereby provides a mechanism for determining when to stop repeatedly
-        re-running the analysis - stop when there is convergence as measured by procrustes rmse.
-        # for ecological data, samples should be standardized by sample size to avoid ordinations
-        # that reflect primarily sample size unless the input matrix has already been standardized
-        # The Wisconsin double standarization is done automatically following the square transformation. 
-        # Generate a distance (dissimiliarity) matrix from the multivariate data
-        # Bray-Curtis dissimilarity matrix
-        # if distance_metric == 'bray_curtis', call metaMDS with the default Bray distance setting
-        # else: # euclidean
         """
 
         logging.info('--->\nrunning mds with input\n' +
@@ -499,6 +480,7 @@ class MDSUtils:
         if n_components > max_size:
             raise ValueError('Number of components should be less than number of samples')
 
+        exitCode = -99
         if "KBaseMatrices" in obj_type:
             # create the input file from obj_data
             matrix_tab = obj_data['data']['values']
@@ -511,12 +493,15 @@ class MDSUtils:
                 matrix_df.to_csv(m_file, sep='\t')
 
             params['datafile'] = matrix_data_file
-            self.run_mds_with_file(params)
+            exitCode = self.run_mds_with_file(params)
         else:
             err_msg = 'Ooops! [{}] is not supported.\n'.format(obj_type)
             err_msg += 'Please provide a KBaseMatrices object'
             raise ValueError("err_msg")
    
+        if exitCode == -99:
+            raise ValueError('Caught subprocess.CalledProcessError while calling R.')
+
         # saving the mds_matrix object
         # read mds results from files into data frames
         dist_matrix_df = pd.read_csv(os.path.join(self.output_dir, "dist_matrix.csv"))
@@ -554,13 +539,7 @@ class MDSUtils:
         rscrpt_file = self._build_rMDS_script(params)
         logging.info('--->\nR script file has been written to {}'.format(rscrpt_file))
 
-        exitCode = self._execute_r_script(rscrpt_file)
-
-        returnVal = {'mds_ref': None,
-		     'report_name': None,
-                     'report_ref': None}
-
-        return returnVal
+        return self._execute_r_script(rscrpt_file)
 
     def export_mds_matrix_excel(self, params):
         """
