@@ -40,6 +40,7 @@ RUN cp /usr/bin/Rscript /kb/deployment/bin/.
 
 ## Install packages are available for ecologists
 RUN Rscript -e "install.packages('vegan')"
+RUN Rscript -e "install.packages('vegan3d')"
 RUN Rscript -e "install.packages('jsonlite')"
 
 # -----------------------------------------
