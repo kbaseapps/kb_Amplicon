@@ -39,8 +39,16 @@ RUN cp /usr/bin/R /kb/deployment/bin/.
 RUN cp /usr/bin/Rscript /kb/deployment/bin/.
 
 ## Install packages are available for ecologists
+# vegan: Community Ecology Package
 RUN Rscript -e "install.packages('vegan')"
+# vegan3d: Static and Dynamic 3D Plots for the 'vegan' Package
 RUN Rscript -e "install.packages('vegan3d')"
+
+## Install other packages
+# parmigene: Parallel Mutual Information estimation for Gene Network reconstruction
+RUN Rscript -e "install.packages('parmigene')"
+
+# jsonlite: A Robust, High Performance JSON Parser and Generator for R
 RUN Rscript -e "install.packages('jsonlite')"
 
 # -----------------------------------------
