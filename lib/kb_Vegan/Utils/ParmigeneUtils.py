@@ -16,13 +16,14 @@ from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.KBaseReportClient import KBaseReport
 
 
-class MDSUtils:
+class ParmigeneUtils:
 
     R_BIN = '/kb/deployment/bin'
-    MDS_OUT_DIR = 'mds_output'
+    PARMI_OUT_DIR = 'parmigene_output'
     PARAM_IN_WS = 'workspace_name'
     PARAM_IN_MATRIX = 'input_obj_ref'
-    PARAM_OUT_MATRIX = 'mds_matrix_name'
+    PARAM_OUT_MATRIX = 'parmigene_matrix_name'
+    OMP_NUM_THREADS = 'num_threads'
 
     def _mkdir_p(self, path):
         """
@@ -38,115 +39,56 @@ class MDSUtils:
             else:
                 raise
 
-    def _validate_run_mds_params(self, params):
+    def _validate_run_mi_params(self, params):
         """
-        _validate_run_mds_params:
-            validates params passed to run_mds method
+        _validate_run_mi_params:
+            validates params passed to run_mi method
         """
 
-        logging.info('start validating run_mds params')
+        logging.info('start validating run_mi params')
 
         # check for required parameters
         for p in [self.PARAM_IN_MATRIX, self.PARAM_IN_WS, self.PARAM_OUT_MATRIX]:
             if p not in params:
                 raise ValueError('"{}" parameter is required, but missing'.format(p))
 
-    def _build_rMDS_script(self, params):
+    def _build_rParmigene_script(self, mi, algthm, num_threads, eps):
         """
-        _build_rMDS_script: build a sequence of R command calls according to params
-        Note: To run the NMDS, we will use the function metaMDS from the vegan package.
-        # The metaMDS function requires only a community-by-species matrix.
+        _build_rParmigene_script: build a sequence of R command calls according to params
+        Note: To run the Parmigene functions, we will call different functions from the parmigene
+        package, that requires a mutual information matrix (mi), the algorithm name (algthm),
+        actual number of threads used (num_threads) and, sometimes, a positive numeric criteria
+        (eps) to remove the weakest edge of each triple of nodes.
         """
-        data_file_path = params.get('datafile', None)
-        if not data_file_path:
-            return ''
-
-        exists = os.path.isfile(os.path.join(self.output_dir, os.path.basename(data_file_path)))
-        if not exists:
-            shutil.copyfile(data_file_path,
-                            os.path.join(self.output_dir, os.path.basename(data_file_path)))
-
-        n_components = params.get('n_components', 2)
-        max_iter = params.get('max_iter', 300)
-        run_metric = True if params.get('metric', 0) else False
-        dist_metric = params.get('distance_metric', 'bray')
-
-        mds_cfg = 'distance="' + dist_metric + '",try=20,trymax=' + str(max_iter) + \
-                  ',autotransform=TRUE,noshare=0.1,expand=TRUE,trace=1,' + \
-                  'plot=FALSE,engine=c("monoMDS","isoMDS"),k=' + str(n_components)
-        if run_metric:
-            mds_cfg += 'metric=True'
-
-        mds_scrpt = 'library(vegan)\n'
-        mds_scrpt += 'library(jsonlite)\n'
-        mds_scrpt += 'vg_data <- read.table("' + data_file_path + \
-                     '",header=TRUE,row.names=1,sep="")\n'
-        # remove the last (taxonomy) column
-        # mds_scrpt += 'vg_data<-vg_data[,1:dim(vg_data)[2]-1]\n'
-        # Function metaMDS returns an object of class metaMDS.
-        mds_scrpt += 'vg_data.mds <- metaMDS(vg_data,' + mds_cfg + ')\n'
-        mds_scrpt += 'vg_data.mds\n'
+        parmi_scrpt = 'library(parmigene)\n'
+        parmi_scrpt += algthm + '(' + mi + ',' + eps + ')\n'
         # save the results in the memory
         # 1) store species ordination
-        mds_scrpt += 'variableScores <- vg_data.mds$species\n'
+        parmi_scrpt += 'variableScores <- vg_data.parmi$species\n'
         # 2) store site ordination
-        mds_scrpt += 'sampleScores <- vg_data.mds$points\n'
-        mds_scrpt += 'stress <- vg_data.mds$stress\n'
-        mds_scrpt += 'dist_metric <- vg_data.mds$distance\n'
-        mds_scrpt += 'dist_matrix <- vg_data.mds$diss\n'
-        mds_scrpt += 'dist_call <- vg_data.mds$distcall\n'
-        mds_scrpt += 'converged <- vg_data.mds$converged\n'
-        mds_scrpt += 'dims <- vg_data.mds$ndim\n'
-        mds_scrpt += 'tries <- vg_data.mds$tries\n'
-        mds_scrpt += 'maxits <- vg_data.mds$maxits\n'
-        mds_scrpt += 'func_call <- vg_data.mds$call\n'
-        mds_scrpt += 'mds_data <- vg_data.mds$data\n'
+        parmi_scrpt += 'sampleScores <- vg_data.parmi$points\n'
 
         # save the results to the current dir
         # Write CSV in R
-        mds_scrpt += 'write.csv(dist_matrix,file="dist_matrix.csv",row.names=TRUE,na="")\n'
-        mds_scrpt += 'write.csv(variableScores,file="species_ordination.csv",' + \
-                     'row.names=TRUE,na="")\n'
-        mds_scrpt += 'write.csv(sampleScores,file="site_ordination.csv",row.names=TRUE,na="")\n'
+        parmi_scrpt += 'write.csv(dist_matrix,file="dist_matrix.csv",row.names=TRUE,na="")\n'
+        parmi_scrpt += 'write.csv(variableScores,file="species_ordination.csv",' + \
+                       'row.names=TRUE,na="")\n'
 
         # Write JSON in R
-        mds_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,' + \
-                     'auto_unbox=FALSE)\n'
-        mds_scrpt += 'write_json(toJSON(variableScores),path="species_ordination.json",' + \
-                     'pretty=TRUE,auto_unbox=FALSE)\n'
-        mds_scrpt += 'write_json(toJSON(sampleScores),path="site_ordination.json",' + \
-                     'pretty=TRUE,auto_unbox=FALSE)\n'
-        mds_scrpt += 'item_name=c("stress","distance_metric","dist_call","converged",' + \
-                     '"dimesions","trials","maxits")\n'
-        mds_scrpt += 'item_value=c(stress,dist_metric,dist_call,converged,dims,tries,maxits)\n'
-        mds_scrpt += 'df <- data.frame(item_name,item_value,stringsAsFactors=FALSE)\n'
-        mds_scrpt += 'write_json(toJSON(df),path="others.json",pretty=TRUE,auto_unbox=FALSE)\n'
+        parmi_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,' + \
+                       'auto_unbox=FALSE)\n'
 
-        # save mds plot
-        mds_scrpt += 'bmp(file="saving_mds_plot.bmp",width=6,height=4,units="in",res=100)\n'
-        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
-        mds_scrpt += 'points(vg_data.mds)\n'
-        mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="saving_mds_plot.pdf",width=6,height=4)\n'
-        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
-        mds_scrpt += 'points(vg_data.mds)\n'
-        mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="mds_plot_withlabel.pdf",width=6,height=4)\n'
-        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
-        mds_scrpt += 'ordilabel(vg_data.mds,dis="sites",cex=1.2,font=3,fill="hotpink",col="blue")\n'
-        mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="mds_plot_withcolor.pdf",width=6,height=4)\n'
-        mds_scrpt += 'fig <- ordiplot(vg_data.mds,type="none")\n'
-        mds_scrpt += 'points(fig,"sites",pch=21,col="red",bg="yellow")\n'
-        mds_scrpt += 'points(fig,"species",pch=21,col="green",bg="blue")\n'
-        # mds_scrpt += 'text(fig, "species", col="blue", cex=0.9)\n'
-        mds_scrpt += 'dev.off()\n'
+        # save Parmigene plot
+        parmi_scrpt += 'bmp(file="saving_mi_plot.bmp",width=6,height=4,units="in",res=100)\n'
+        parmi_scrpt += 'plot(vg_data.parmi,type="n",display="sites")\n'
+        parmi_scrpt += 'points(vg_data.parmi)\n'
+        parmi_scrpt += 'dev.off()\n'
 
-        mds_rscript = 'mds_script.R'
-        rscrpt_file_path = os.path.join(self.output_dir, mds_rscript)
+        parmi_rscript = 'parmi_script.R'
+        rscrpt_file_path = os.path.join(self.output_dir, parmi_rscript)
 
         with open(rscrpt_file_path, 'w') as r_file:
-            r_file.write(mds_scrpt)
+            r_file.write(parmi_scrpt)
         return rscrpt_file_path
 
     def _execute_r_script(self, rfile_name):
@@ -162,7 +104,7 @@ class MDSUtils:
         rcmd = [os.path.join(self.R_BIN, 'Rscript')]
         rcmd.append(rfile_name)
 
-        logging.info('Running metaMDS script in current working directory: {}'.format(result_dir))
+        logging.info('Running Parmigene script in current working directory: {}'.format(result_dir))
         exitCode = 0
         try:
             complete_proc = subprocess.run(rcmd, cwd=result_dir, stdin=subprocess.PIPE,
@@ -198,21 +140,21 @@ class MDSUtils:
 
         return matrix_data
 
-    def _mds_df_to_excel(self, mds_df, distance_df, result_dir, mds_matrix_ref):
+    def _mi_df_to_excel(self, mi_df, distance_df, result_dir, mi_matrix_ref):
         """
-        write MDS matrix df into excel
+        write mutual information matrix df into excel
         """
-        logging.info('writting mds data frame to excel file')
-        mds_matrix_obj = self.dfu.get_objects({'object_refs': [mds_matrix_ref]})['data'][0]
-        mds_matrix_info = mds_matrix_obj['info']
-        mds_matrix_name = mds_matrix_info[1]
+        logging.info('writting mi data frame to excel file')
+        mi_matrix_obj = self.dfu.get_objects({'object_refs': [mi_matrix_ref]})['data'][0]
+        mi_matrix_info = mi_matrix_obj['info']
+        mi_matrix_name = mi_matrix_info[1]
 
-        file_path = os.path.join(result_dir, mds_matrix_name + ".xlsx")
+        file_path = os.path.join(result_dir, mi_matrix_name + ".xlsx")
         writer = pd.ExcelWriter(file_path)
 
-        mds_df.to_excel(writer, "mds_matrix", index=True)
+        mi_df.to_excel(writer, "mi_matrix", index=True)
         if distance_df:
-            distance_df.to_excel(writer, "mds_distance_matrix", index=True)
+            distance_df.to_excel(writer, "mi_distance_matrix", index=True)
 
         writer.close()
 
@@ -229,25 +171,25 @@ class MDSUtils:
 
         return df
 
-    def _mds_to_df(self, mds_matrix_ref):
+    def _mi_to_df(self, mi_matrix_ref):
         """
-        retrieve MDS matrix ws object to mds_df
+        retrieve mutual information matrix ws object to mi_df
         """
-        logging.info('converting mds matrix to data frame')
-        mds_data = self.dfu.get_objects({'object_refs': [mds_matrix_ref]})['data'][0]['data']
+        logging.info('converting mutual information matrix to data frame')
+        mi_data = self.dfu.get_objects({'object_refs': [mi_matrix_ref]})['data'][0]['data']
 
-        rotation_matrix_data = mds_data.get('rotation_matrix')
-        distance_matrix_data = mds_data.get('distance_matrix')
-        original_matrix_ref = mds_data.get('original_matrix_ref')
-        dimension = mds_data.get('mds_parameters').get('n_components')
+        rotation_matrix_data = mi_data.get('rotation_matrix')
+        distance_matrix_data = mi_data.get('distance_matrix')
+        original_matrix_ref = mi_data.get('original_matrix_ref')
+        dimension = mi_data.get('mi_parameters').get('n_components')
 
-        mds_df = self._Matrix2D_to_df(rotation_matrix_data)
+        mi_df = self._Matrix2D_to_df(rotation_matrix_data)
         distance_df = None
         if distance_matrix_data:
             distance_df = self._Matrix2D_to_df(distance_matrix_data)
 
         if original_matrix_ref:
-            logging.info('appending instance group information to mds data frame')
+            logging.info('appending instance group information to mutual information data frame')
             obj_data = self.dfu.get_objects(
                 {'object_refs': [original_matrix_ref]})['data'][0]['data']
 
@@ -262,37 +204,37 @@ class MDSUtils:
                                  columns=list(map(lambda x: x.get('attribute'), attributes)),
                                  index=instances.keys())
 
-            mds_df = mds_df.merge(am_df, left_index=True, right_index=True, how='left',
+            mi_df = mi_df.merge(am_df, left_index=True, right_index=True, how='left',
                                   validate='one_to_one')
 
-        return mds_df, distance_df
+        return mi_df, distance_df
 
-    def _save_mds_matrix(self, workspace_name, input_obj_ref, mds_matrix_name,
-                         distance_df, mds_params_df, site_ordin_df, species_ordin_df):
+    def _save_mi_matrix(self, workspace_name, input_obj_ref, mi_matrix_name,
+                         distance_df, mi_params_df, site_ordin_df, species_ordin_df):
 
-        logging.info('Saving MDSMatrix...')
+        logging.info('Saving MIMatrix...')
 
         if not isinstance(workspace_name, int):
             ws_name_id = self.dfu.ws_name_to_id(workspace_name)
         else:
             ws_name_id = workspace_name
 
-        mds_data = {}
+        mi_data = {}
 
-        mds_data.update({'distance_matrix': self._df_to_list(distance_df)})
-        mds_data.update({'site_ordination': self._df_to_list(site_ordin_df)})
-        mds_data.update({'species_ordination': self._df_to_list(species_ordin_df)})
-        mds_data.update({'mds_parameters': self._df_to_list(mds_params_df)})
-        mds_data.update({'original_matrix_ref': input_obj_ref})
-        mds_data.update({'rotation_matrix': self._df_to_list(distance_df)})
+        mi_data.update({'distance_matrix': self._df_to_list(distance_df)})
+        mi_data.update({'site_ordination': self._df_to_list(site_ordin_df)})
+        mi_data.update({'species_ordination': self._df_to_list(species_ordin_df)})
+        mi_data.update({'mi_parameters': self._df_to_list(mi_params_df)})
+        mi_data.update({'original_matrix_ref': input_obj_ref})
+        mi_data.update({'rotation_matrix': self._df_to_list(distance_df)})
 
         obj_type = 'KBaseExperiments.PCAMatrix'
         info = self.dfu.save_objects({
             "id": ws_name_id,
             "objects": [{
                 "type": obj_type,
-                "data": mds_data,
-                "name": mds_matrix_name
+                "data": mi_data,
+                "name": mi_matrix_name
             }]
         })[0]
 
@@ -328,50 +270,50 @@ class MDSUtils:
         _generate_output_file_list: zip result files and generate file_links for report
         """
 
-        logging.info('Start packing result files from MDS...')
+        logging.info('Start packing result files from Parmigene...')
 
         output_files = list()
 
         output_dir = os.path.join(self.working_dir, str(uuid.uuid4()))
         self._mkdir_p(output_dir)
-        mds_output = os.path.join(output_dir, 'metaMDS_output.zip')
-        self._zip_folder(out_dir, mds_output)
+        mi_output = os.path.join(output_dir, 'metami_output.zip')
+        self._zip_folder(out_dir, mi_output)
 
-        output_files.append({'path': mds_output,
-                             'name': os.path.basename(mds_output),
-                             'label': os.path.basename(mds_output),
-                             'description': 'Output file(s) generated by metaMDS'})
+        output_files.append({'path': mi_output,
+                             'name': os.path.basename(mi_output),
+                             'label': os.path.basename(mi_output),
+                             'description': 'Output file(s) generated by Parmigene'})
         return output_files
 
-    def _generate_mds_html_report(self, mds_outdir, n_components):
+    def _generate_mi_html_report(self, mi_outdir, n_components):
 
-        logging.info('Start generating html report for MDS results...')
+        logging.info('Start generating html report for Parmigene results...')
         html_report = list()
 
         result_dir = os.path.join(self.working_dir, str(uuid.uuid4()))
         self._mkdir_p(result_dir)
-        result_file_path = os.path.join(result_dir, 'mds_result.html')
+        result_file_path = os.path.join(result_dir, 'mi_result.html')
 
-        mds_plots = list()
-        for root, folders, files in os.walk(mds_outdir):
+        mi_plots = list()
+        for root, folders, files in os.walk(mi_outdir):
             # Find the image files by their extensions.
             for f in files:
                 if re.match('^[a-zA-Z]+.*.(jpeg|jpg|bmp|tiff|pdf|ps)$', f):
                     absolute_path = os.path.join(root, f)
                     logging.info("Adding {} to plot archive.".format(absolute_path))
-                    mds_plots.append(absolute_path)
+                    mi_plots.append(absolute_path)
 
         visualization_content = ''
 
-        for mds_plot in mds_plots:
-            shutil.copy2(mds_plot,
-                         os.path.join(result_dir, os.path.basename(mds_plot)))
+        for mi_plot in mi_plots:
+            shutil.copy2(mi_plot,
+                         os.path.join(result_dir, os.path.basename(mi_plot)))
             visualization_content += '<iframe height="900px" width="100%" '
-            visualization_content += 'src="{}" '.format(os.path.basename(mds_plot))
+            visualization_content += 'src="{}" '.format(os.path.basename(mi_plot))
             visualization_content += 'style="border:none;"></iframe>\n<p></p>\n'
 
         with open(result_file_path, 'w') as result_file:
-            with open(os.path.join(os.path.dirname(__file__), 'templates', 'mds_template.html'),
+            with open(os.path.join(os.path.dirname(__file__), 'templates', 'mi_template.html'),
                       'r') as report_template_file:
                 report_template = report_template_file.read()
                 report_template = report_template.replace('<p>Visualization_Content</p>',
@@ -386,19 +328,19 @@ class MDSUtils:
         html_report.append({'shock_id': report_shock_id,
                             'name': os.path.basename(result_file_path),
                             'label': os.path.basename(result_file_path),
-                            'description': 'HTML summary report for MDS Matrix App'
+                            'description': 'HTML summary report for Parmigene Matrix App'
                             })
         return html_report
 
-    def _generate_mds_report(self, mds_ref, output_dir, workspace_name, n_components):
-        logging.info('Creating MDS report...')
+    def _generate_mi_report(self, mi_ref, output_dir, workspace_name, n_components):
+        logging.info('Creating Parmigene report...')
 
         output_files = self._generate_output_file_list(output_dir)
-        output_html_files = self._generate_mds_html_report(output_dir, n_components)
+        output_html_files = self._generate_mi_html_report(output_dir, n_components)
 
         objects_created = list()
-        objects_created.append({'ref': mds_ref,
-                                'description': 'MDS Matrix'})
+        objects_created.append({'ref': mi_ref,
+                                'description': 'Mutual Information Matrix'})
 
         report_params = {'message': '',
                          'workspace_name': workspace_name,
@@ -407,7 +349,7 @@ class MDSUtils:
                          'html_links': output_html_files,
                          'direct_html_link_index': 0,
                          'html_window_height': 666,
-                         'report_object_name': 'kb_mds_report_' + str(uuid.uuid4())}
+                         'report_object_name': 'kb_mi_report_' + str(uuid.uuid4())}
 
         kbase_report_client = KBaseReport(self.callback_url)
         output = kbase_report_client.create_extended_report(report_params)
@@ -427,29 +369,28 @@ class MDSUtils:
 
         self.data_util = DataUtil(config)
         self.dfu = DataFileUtil(self.callback_url)
-        self.output_dir = os.path.join(self.working_dir, self.MDS_OUT_DIR)
+        self.output_dir = os.path.join(self.working_dir, self.PARMI_OUT_DIR)
         self._mkdir_p(self.output_dir)
 
-    def run_mds(self, params):
+    def run_mi(self, params):
         """
-        run_mds: perform MDS analysis on matrix
+        run_mi: perform Parmigene analysis on matrix
         :param input_obj_ref: object reference of a matrix
         :param workspace_name: the name of the workspace
-        :param mds_matrix_name: name of MDS (KBaseExperiments.MDSMatrix) object
+        :param mi_matrix_name: name of Parmigene (KBaseExperiments.MIMatrix) object
         :param n_components - dimentionality of the reduced space (default 2)
         :param max_iter: maximum iterations allowed
-        :param metric: indication of running metric or non-metric MDS
         :param distance_metric: distance the ordination will be performed on, default to "bray"
         """
 
-        logging.info('--->\nrunning mds with input\n' +
+        logging.info('--->\nrunning Parmigene with input\n' +
                      'params:\n{}'.format(json.dumps(params, indent=1)))
 
-        self._validate_run_mds_params(params)
+        self._validate_run_mi_params(params)
 
         input_obj_ref = params.get('input_obj_ref')
         workspace_name = params.get('workspace_name')
-        mds_matrix_name = params.get('mds_matrix_name')
+        mi_matrix_name = params.get('mi_matrix_name')
         n_components = int(params.get('n_components', 2))
 
         res = self.dfu.get_objects({'object_refs': [input_obj_ref]})['data'][0]
@@ -474,7 +415,7 @@ class MDSUtils:
                 matrix_df.to_csv(m_file, sep='\t')
 
             params['datafile'] = matrix_data_file
-            exitCode = self.run_mds_with_file(params)
+            exitCode = self.run_mi_with_file(params)
         else:
             err_msg = 'Ooops! [{}] is not supported.\n'.format(obj_type)
             err_msg += 'Please provide a KBaseMatrices object'
@@ -483,62 +424,61 @@ class MDSUtils:
         if exitCode == -99:
             raise ValueError('Caught subprocess.CalledProcessError while calling R.')
 
-        # saving the mds_matrix object
-        # read mds results from files into data frames
+        # saving the mi_matrix object
+        # read Parmigene results from files into data frames
         dist_matrix_df = pd.read_csv(os.path.join(self.output_dir, "dist_matrix.csv"))
-        mds_params_df = pd.read_json(os.path.join(self.output_dir, "others.json"))
+        mi_params_df = pd.read_json(os.path.join(self.output_dir, "others.json"))
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"))
         species_ordin_df = pd.read_csv(os.path.join(self.output_dir, "species_ordination.csv"))
 
-        mds_ref = self._save_mds_matrix(workspace_name, input_obj_ref, mds_matrix_name,
-                                        dist_matrix_df, mds_params_df, site_ordin_df,
+        mi_ref = self._save_mi_matrix(workspace_name, input_obj_ref, mi_matrix_name,
+                                        dist_matrix_df, mi_params_df, site_ordin_df,
                                         species_ordin_df)
-        returnVal = {'mds_ref': mds_ref}
+        returnVal = {'mi_ref': mi_ref}
 
         # generating report
-        report_output = self._generate_mds_report(mds_ref, self.output_dir,
+        report_output = self._generate_mi_report(mi_ref, self.output_dir,
                                                   workspace_name, n_components)
 
         returnVal.update(report_output)
         return returnVal
 
-    def run_mds_with_file(self, params):
+    def run_mi_with_file(self, params):
         """
-        run_mds_with_file: perform MDS analysis on matrix
+        run_mi_with_file: perform Parmigene analysis on matrix
         :param datafile: a file that contains the matrix data
         :param workspace_name: the name of the workspace
-        :param mds_matrix_name: name of MDS (KBaseExperiments.MDSMatrix) object
+        :param mi_matrix_name: name of Parmigene (KBaseExperiments.MIMatrix) object
         :param n_components - dimentionality of the reduced space (default 2)
         :param max_iter: maximum iterations allowed
-        :param metric: indication of running metric or non-metric MDS
         :param distance_metric: distance the ordination will be performed on, default to "bray"
         """
 
-        logging.info('--->\nrunning mds with input \n' +
+        logging.info('--->\nrunning Parmigene with input \n' +
                      'params:\n{}'.format(json.dumps(params, indent=1)))
 
-        rscrpt_file = self._build_rMDS_script(params)
+        rscrpt_file = self._build_rmi_script(params)
         logging.info('--->\nR script file has been written to {}'.format(rscrpt_file))
 
         return self._execute_r_script(rscrpt_file)
 
-    def export_mds_matrix_excel(self, params):
+    def export_mi_matrix_excel(self, params):
         """
-        export MDSMatrix as Excel
+        export MIMatrix as Excel
         """
-        logging.info('start exporting mds matrix')
-        mds_matrix_ref = params.get('input_ref')
+        logging.info('start exporting Parmigene matrix')
+        mi_matrix_ref = params.get('input_ref')
 
-        mds_df, components_df = self._mds_to_df(mds_matrix_ref)
+        mi_df, components_df = self._mi_to_df(mi_matrix_ref)
 
         result_dir = os.path.join(self.scratch, str(uuid.uuid4()))
         self._mkdir_p(result_dir)
 
-        self._mds_df_to_excel(mds_df, components_df, result_dir, mds_matrix_ref)
+        self._mi_df_to_excel(mi_df, components_df, result_dir, mi_matrix_ref)
 
         package_details = self.dfu.package_for_download({
             'file_path': result_dir,
-            'ws_refs': [mds_matrix_ref]
+            'ws_refs': [mi_matrix_ref]
         })
 
         return {'shock_id': package_details['shock_id']}
