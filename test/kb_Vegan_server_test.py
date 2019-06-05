@@ -53,7 +53,6 @@ class kb_VeganTest(unittest.TestCase):
             cls.wsClient.delete_workspace({'workspace': cls.wsName})
             print('Test workspace was deleted')
 
-
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
     # Uncomment to skip this test
     # @unittest.skip("skipped test_run_mds_with_objref")
@@ -75,7 +74,7 @@ class kb_VeganTest(unittest.TestCase):
         self.assertTrue(ret[0]['mds_ref'])
         self.assertTrue(ret[0]['report_name'])
         self.assertTrue(ret[0]['report_ref'])
-        mds_dir = '/kb/module/work/tmp/Vegan_output'
+        mds_dir = '/kb/module/work/tmp/mds_output'
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'dist_matrix.csv')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'others.json')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'site_ordination.csv')))
@@ -105,7 +104,7 @@ class kb_VeganTest(unittest.TestCase):
                                           'max_iter': 20,
                                           'mds_matrix_name': 'output_mds_from_file'})
         self.assertEqual(ret, 0)
-        mds_dir = '/kb/module/work/tmp/Vegan_output'
+        mds_dir = '/kb/module/work/tmp/mds_output'
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'dist_matrix.csv')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'others.json')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'site_ordination.csv')))
