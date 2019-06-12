@@ -447,9 +447,9 @@ class MDSUtils:
 
         self._validate_run_mds_params(params)
 
-        input_obj_ref = params.get('input_obj_ref')
-        workspace_name = params.get('workspace_name')
-        mds_matrix_name = params.get('mds_matrix_name')
+        input_obj_ref = params.get(self.PARAM_IN_MATRIX)
+        workspace_name = params.get(self.PARAM_IN_WS)
+        mds_matrix_name = params.get(self.PARAM_OUT_MATRIX)
         n_components = int(params.get('n_components', 2))
 
         res = self.dfu.get_objects({'object_refs': [input_obj_ref]})['data'][0]

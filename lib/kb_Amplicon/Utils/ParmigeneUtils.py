@@ -205,12 +205,12 @@ class ParmigeneUtils:
                                  index=instances.keys())
 
             mi_df = mi_df.merge(am_df, left_index=True, right_index=True, how='left',
-                                  validate='one_to_one')
+                                validate='one_to_one')
 
         return mi_df, distance_df
 
     def _save_mi_matrix(self, workspace_name, input_obj_ref, mi_matrix_name,
-                         distance_df, mi_params_df, site_ordin_df, species_ordin_df):
+                        distance_df, mi_params_df, site_ordin_df, species_ordin_df):
 
         logging.info('Saving MIMatrix...')
 
@@ -388,19 +388,15 @@ class ParmigeneUtils:
 
         self._validate_run_mi_params(params)
 
-        input_obj_ref = params.get('input_obj_ref')
-        workspace_name = params.get('workspace_name')
-        mi_matrix_name = params.get('mi_matrix_name')
-        n_components = int(params.get('n_components', 2))
+        input_obj_ref = params.get(self.PARAM_IN_MATRIX)
+        workspace_name = params.get(self.PARAM_IN_WS)
+        mi_matrix_name = params.get(self.PARAM_OUT_MATRIX)
+        n_threads = int(params.get(self.OMP_NUM_THREADS, 2))
 
         res = self.dfu.get_objects({'object_refs': [input_obj_ref]})['data'][0]
         obj_data = res['data']
         obj_name = res['info'][1]
         obj_type = res['info'][2]
-
-        max_size = len(obj_data['data']['col_ids'])
-        if n_components > max_size:
-            raise ValueError('Number of components should be less than number of samples')
 
         exitCode = -99
         if "KBaseMatrices" in obj_type:
@@ -432,13 +428,13 @@ class ParmigeneUtils:
         species_ordin_df = pd.read_csv(os.path.join(self.output_dir, "species_ordination.csv"))
 
         mi_ref = self._save_mi_matrix(workspace_name, input_obj_ref, mi_matrix_name,
-                                        dist_matrix_df, mi_params_df, site_ordin_df,
-                                        species_ordin_df)
+                                      dist_matrix_df, mi_params_df, site_ordin_df,
+                                      species_ordin_df)
         returnVal = {'mi_ref': mi_ref}
 
         # generating report
         report_output = self._generate_mi_report(mi_ref, self.output_dir,
-                                                  workspace_name, n_components)
+                                                 workspace_name, n_threads)
 
         returnVal.update(report_output)
         return returnVal

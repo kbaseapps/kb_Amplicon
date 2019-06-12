@@ -53,7 +53,6 @@ class kb_AmpliconTest(unittest.TestCase):
             cls.wsClient.delete_workspace({'workspace': cls.wsName})
             print('Test workspace was deleted')
 
-
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
     # Uncomment to skip this test
     # @unittest.skip("skipped test_run_mds_with_objref")
