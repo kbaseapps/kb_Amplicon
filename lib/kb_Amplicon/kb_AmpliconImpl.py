@@ -4,17 +4,17 @@ import logging
 import os
 
 from installed_clients.KBaseReportClient import KBaseReport
-from kb_Vegan.Utils.MDSUtils import MDSUtils
+from kb_Amplicon.Utils.MDSUtils import MDSUtils
 #END_HEADER
 
 
-class kb_Vegan:
+class kb_Amplicon:
     '''
     Module Name:
-    kb_Vegan
+    kb_Amplicon
 
     Module Description:
-    A KBase module: kb_Vegan
+    A KBase module: kb_Amplicon
     '''
 
     ######## WARNING FOR GEVENT USERS ####### noqa
@@ -24,8 +24,8 @@ class kb_Vegan:
     # the latter method is running.
     ######################################### noqa
     VERSION = "0.0.1"
-    GIT_URL = "https://github.com/qzzhang/kb_Vegan.git"
-    GIT_COMMIT_HASH = "61bc10978a1e408823c2af0709c73f5af5a496e2"
+    GIT_URL = "https://github.com/qzzhang/kb_Amplicon.git"
+    GIT_COMMIT_HASH = "bbab629fcac0d6487ea1d6a0adc8441e60910c24"
 
     #BEGIN_CLASS_HEADER
     #END_CLASS_HEADER

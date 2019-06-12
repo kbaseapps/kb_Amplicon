@@ -55,8 +55,8 @@ RUN Rscript -e "install.packages('jsonlite')"
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work
 
-RUN mkdir -p /kb/module/work/vegan
-RUN mkdir -p /kb/module/work/vegan/results
+RUN mkdir -p /kb/module/work/amplicon
+RUN mkdir -p /kb/module/work/amplicon/results
 
 RUN chmod -R a+rw /kb/module
 

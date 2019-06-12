@@ -1,7 +1,7 @@
-SERVICE = kb_vegan
-SERVICE_CAPS = kb_Vegan
-SPEC_FILE = kb_Vegan.spec
-URL = https://kbase.us/services/kb_vegan
+SERVICE = kb_amplicon
+SERVICE_CAPS = kb_Amplicon
+SPEC_FILE = kb_Amplicon.spec
+URL = https://kbase.us/services/kb_amplicon
 DIR = $(shell pwd)
 LIB_DIR = lib
 SCRIPTS_DIR = scripts

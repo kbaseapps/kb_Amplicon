@@ -17,7 +17,7 @@ from jsonrpcbase import JSONRPCService, InvalidParamsError, KeywordError, \
 from jsonrpcbase import ServerError as JSONServerError
 
 from biokbase import log
-from kb_Vegan.authclient import KBaseAuth as _KBaseAuth
+from kb_Amplicon.authclient import KBaseAuth as _KBaseAuth
 
 try:
     from ConfigParser import ConfigParser
@@ -45,14 +45,14 @@ def get_config():
     retconfig = {}
     config = ConfigParser()
     config.read(get_config_file())
-    for nameval in config.items(get_service_name() or 'kb_Vegan'):
+    for nameval in config.items(get_service_name() or 'kb_Amplicon'):
         retconfig[nameval[0]] = nameval[1]
     return retconfig
 
 config = get_config()
 
-from kb_Vegan.kb_VeganImpl import kb_Vegan  # noqa @IgnorePep8
-impl_kb_Vegan = kb_Vegan(config)
+from kb_Amplicon.kb_AmpliconImpl import kb_Amplicon  # noqa @IgnorePep8
+impl_kb_Amplicon = kb_Amplicon(config)
 
 
 class JSONObjectEncoder(json.JSONEncoder):
@@ -327,7 +327,7 @@ class Application(object):
                                    context['method'], context['call_id'])
 
     def __init__(self):
-        submod = get_service_name() or 'kb_Vegan'
+        submod = get_service_name() or 'kb_Amplicon'
         self.userlog = log.log(
             submod, ip_address=True, authuser=True, module=True, method=True,
             call_id=True, changecallback=self.logcallback,
@@ -338,12 +338,12 @@ class Application(object):
         self.serverlog.set_log_level(6)
         self.rpc_service = JSONRPCServiceCustom()
         self.method_authentication = dict()
-        self.rpc_service.add(impl_kb_Vegan.run_mds,
-                             name='kb_Vegan.run_mds',
+        self.rpc_service.add(impl_kb_Amplicon.run_mds,
+                             name='kb_Amplicon.run_mds',
                              types=[dict])
-        self.method_authentication['kb_Vegan.run_mds'] = 'required'  # noqa
-        self.rpc_service.add(impl_kb_Vegan.status,
-                             name='kb_Vegan.status',
+        self.method_authentication['kb_Amplicon.run_mds'] = 'required'  # noqa
+        self.rpc_service.add(impl_kb_Amplicon.status,
+                             name='kb_Amplicon.status',
                              types=[dict])
         authurl = config.get(AUTH) if config else None
         self.auth_client = _KBaseAuth(authurl)
@@ -398,7 +398,7 @@ class Application(object):
                             err = JSONServerError()
                             err.data = (
                                 'Authentication required for ' +
-                                'kb_Vegan ' +
+                                'kb_Amplicon ' +
                                 'but no authentication header was passed')
                             raise err
                         elif token is None and auth_req == 'optional':

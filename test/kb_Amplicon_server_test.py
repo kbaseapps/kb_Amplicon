@@ -4,15 +4,15 @@ import time
 import unittest
 from configparser import ConfigParser
 
-from kb_Vegan.kb_VeganImpl import kb_Vegan
-from kb_Vegan.kb_VeganServer import MethodContext
-from kb_Vegan.authclient import KBaseAuth as _KBaseAuth
-from kb_Vegan.Utils.MDSUtils import MDSUtils
+from kb_Amplicon.kb_AmpliconImpl import kb_Amplicon
+from kb_Amplicon.kb_AmpliconServer import MethodContext
+from kb_Amplicon.authclient import KBaseAuth as _KBaseAuth
+from kb_Amplicon.Utils.MDSUtils import MDSUtils
 
 from installed_clients.WorkspaceClient import Workspace
 
 
-class kb_VeganTest(unittest.TestCase):
+class kb_AmpliconTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -21,7 +21,7 @@ class kb_VeganTest(unittest.TestCase):
         cls.cfg = {}
         config = ConfigParser()
         config.read(config_file)
-        for nameval in config.items('kb_Vegan'):
+        for nameval in config.items('kb_Amplicon'):
             cls.cfg[nameval[0]] = nameval[1]
         # Getting username from Auth profile for token
         authServiceUrl = cls.cfg['auth-service-url']
@@ -33,18 +33,18 @@ class kb_VeganTest(unittest.TestCase):
         cls.ctx.update({'token': token,
                         'user_id': user_id,
                         'provenance': [
-                            {'service': 'kb_Vegan',
+                            {'service': 'kb_Amplicon',
                              'method': 'please_never_use_it_in_production',
                              'method_params': []
                              }],
                         'authenticated': 1})
         cls.wsURL = cls.cfg['workspace-url']
         cls.wsClient = Workspace(cls.wsURL)
-        cls.serviceImpl = kb_Vegan(cls.cfg)
+        cls.serviceImpl = kb_Amplicon(cls.cfg)
         cls.scratch = cls.cfg['scratch']
         cls.callback_url = os.environ['SDK_CALLBACK_URL']
         suffix = int(time.time() * 1000)
-        cls.wsName = "test_kb_Vegan_" + str(suffix)
+        cls.wsName = "test_kb_Amplicon_" + str(suffix)
         ret = cls.wsClient.create_workspace({'workspace': cls.wsName})  # noqa
 
     @classmethod
@@ -75,7 +75,7 @@ class kb_VeganTest(unittest.TestCase):
         self.assertTrue(ret[0]['mds_ref'])
         self.assertTrue(ret[0]['report_name'])
         self.assertTrue(ret[0]['report_ref'])
-        mds_dir = '/kb/module/work/tmp/Vegan_output'
+        mds_dir = '/kb/module/work/tmp/mds_output'
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'dist_matrix.csv')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'others.json')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'site_ordination.csv')))
@@ -105,7 +105,7 @@ class kb_VeganTest(unittest.TestCase):
                                           'max_iter': 20,
                                           'mds_matrix_name': 'output_mds_from_file'})
         self.assertEqual(ret, 0)
-        mds_dir = '/kb/module/work/tmp/Vegan_output'
+        mds_dir = '/kb/module/work/tmp/mds_output'
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'dist_matrix.csv')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'others.json')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'site_ordination.csv')))

@@ -11,7 +11,7 @@ import subprocess
 
 import pandas as pd
 
-from kb_Vegan.Utils.DataUtil import DataUtil
+from kb_Amplicon.Utils.DataUtil import DataUtil
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.KBaseReportClient import KBaseReport
 

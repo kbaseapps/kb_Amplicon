@@ -1,5 +1,5 @@
 module-name:
-    kb_Vegan
+    kb_Amplicon
 
 module-description:
     A KBase module
@@ -11,5 +11,5 @@ module-version:
     0.0.1
 
 owners:
-    [qzhang]
+    [qzhang, weise]
 

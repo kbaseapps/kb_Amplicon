@@ -1,8 +1,8 @@
 /*
-A KBase module: kb_Vegan
+A KBase module: kb_Amplicon
 */
 
-module kb_Vegan {
+module kb_Amplicon {
     typedef structure {
         string report_name;
         string report_ref;
