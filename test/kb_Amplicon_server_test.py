@@ -6,7 +6,7 @@ from configparser import ConfigParser
 
 from kb_Amplicon.kb_AmpliconImpl import kb_Amplicon
 from kb_Amplicon.kb_AmpliconServer import MethodContext
-from kb_Amplicon.authclient import KBaseAuth as _KBaseAuth
+from installed_clients.authclient import KBaseAuth as _KBaseAuth
 from kb_Amplicon.Utils.MDSUtils import MDSUtils
 
 from installed_clients.WorkspaceClient import Workspace
@@ -24,8 +24,8 @@ class kb_AmpliconTest(unittest.TestCase):
         for nameval in config.items('kb_Amplicon'):
             cls.cfg[nameval[0]] = nameval[1]
         # Getting username from Auth profile for token
-        authServiceUrl = cls.cfg['auth-service-url']
-        auth_client = _KBaseAuth(authServiceUrl)
+        auth_service_url = cls.cfg['auth-service-url']
+        auth_client = _KBaseAuth(auth_service_url)
         user_id = auth_client.get_user(token)
         # WARNING: don't call any logging methods on the context object,
         # it'll result in a NoneType error
@@ -98,11 +98,12 @@ class kb_AmpliconTest(unittest.TestCase):
         # self.assertEqual(ret[...], ...) or other unittest methods
         mds_util = MDSUtils(self.cfg)
 
-        ret = mds_util.run_mds_with_file({'workspace_name': self.wsName,
-                                          'datafile': 'smpl_16s.csv',
-                                          'n_components': 3,
-                                          'max_iter': 20,
-                                          'mds_matrix_name': 'output_mds_from_file'})
+        ret = mds_util.run_mds_with_file({
+            'workspace_name': self.wsName,
+            'datafile': 'smpl_16s.csv',
+            'n_components': 3,
+            'max_iter': 20,
+            'mds_matrix_name': 'output_mds_from_file'})
         self.assertEqual(ret, 0)
         mds_dir = '/kb/module/work/tmp/mds_output'
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'dist_matrix.csv')))
@@ -113,4 +114,3 @@ class kb_AmpliconTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'mds_script.R')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'saving_mds_plot.bmp')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'saving_mds_plot.pdf')))
-
