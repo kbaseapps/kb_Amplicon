@@ -125,20 +125,20 @@ class MDSUtils:
         mds_scrpt += 'write_json(toJSON(df),path="others.json",pretty=TRUE,auto_unbox=FALSE)\n'
 
         # save mds plots
-        mds_scrpt += 'bmp(file="saving_mds_plot.bmp",width=480,height=480,units="px",' + \
+        mds_scrpt += 'bmp(file="saving_mds_plot.bmp",width=580,height=580,units="px",' + \
                      'res=100, pointsize=12)\n'
         mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
         mds_scrpt += 'points(vg_data.mds)\n'
         mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="saving_mds_plot.pdf",width=6,height=4,units="in")\n'
+        mds_scrpt += 'pdf(file="saving_mds_plot.pdf",width=6,height=6)\n'
         mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
         mds_scrpt += 'points(vg_data.mds)\n'
         mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="mds_plot_withlabel.pdf",width=6,height=4,units="in")\n'
+        mds_scrpt += 'pdf(file="mds_plot_withlabel.pdf",width=6,height=6)\n'
         mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
         mds_scrpt += 'ordilabel(vg_data.mds,dis="sites",cex=1.2,font=3,fill="hotpink",col="blue")\n'
         mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="mds_plot_withcolor.pdf",width=6,height=4,units="in")\n'
+        mds_scrpt += 'pdf(file="mds_plot_withcolor.pdf",width=6,height=6)\n'
         mds_scrpt += 'fig <- ordiplot(vg_data.mds,type="none")\n'
         mds_scrpt += 'points(fig,"sites",pch=21,col="red",bg="yellow")\n'
         mds_scrpt += 'points(fig,"species",pch=21,col="green",bg="blue")\n'
@@ -167,7 +167,7 @@ class MDSUtils:
                 plt_type = 'postscript'
 
             mds_scrpt += plt_type
-            mds_scrpt += '(file="' + plt_name + '",width=480,height=480,units="px")\n'
+            mds_scrpt += '(file="' + plt_name + '",width=580,height=580,units="px")\n'
             mds_scrpt += plt_scrpt + '\n'
             mds_scrpt += 'dev.off()\n'
 
