@@ -148,9 +148,16 @@ class MDSUtils:
         if plt_scrpt and re.match("^plot\(\s*[a-zA-Z]+.*\)$", plt_scrpt):
             arr_plt = plt_scrpt.split(',')
             arr_plt[0] = 'vg_data.mds'  # make sure to pass the correct data
-            plt_scrpt = arr_plt.join(',')
-            plt_type = params.get('plot_type', 'usr_plt_type')
-            plt_name = params.get('plot_name', 'usr_plt_name') + '.' + plt_type
+            plt_scrpt = (',').join(arr_plt)
+            plt_type = params.get('plot_type', 'pdf')
+            if not plt_type:
+                plt_type = 'pdf'
+
+            plt_name = params.get('plot_name', 'usr_plt_name')
+            if not plt_name:
+                plt_name = 'usr_plt_name'
+            plt_name += '.' + plt_type
+
             mds_scrpt += plt_type
             mds_scrpt += '(file="' + plt_name + '",width=6,height=4)\n'
             mds_scrpt += plt_scrpt + '\n'
