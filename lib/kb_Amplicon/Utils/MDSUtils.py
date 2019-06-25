@@ -146,8 +146,9 @@ class MDSUtils:
         # If there is user input plotting script:
         plt_scrpt = params.get('plot_script', '')
         if plt_scrpt and re.match("^plot\(\s*[a-zA-Z]+.*\)$", plt_scrpt):
-            plt_scrpt = re.sub("\s", '', plt_scrpt)
-            plt_scrpt = re.sub("([(][a-zA-Z]+.*,)", "(vg_data.mds,", plt_scrpt, 1)  # 1st occurrence
+            arr_plt = plt_scrpt.split(',')
+            arr_plt[0] = 'vg_data.mds'  # make sure to pass the correct data
+            plt_scrpt = arr_plt.join(',')
             plt_type = params.get('plot_type', 'usr_plt_type')
             plt_name = params.get('plot_name', 'usr_plt_name') + '.' + plt_type
             mds_scrpt += plt_type
