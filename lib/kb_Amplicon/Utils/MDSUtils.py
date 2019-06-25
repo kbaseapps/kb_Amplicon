@@ -167,7 +167,8 @@ class MDSUtils:
                 plt_type = 'postscript'
 
             mds_scrpt += plt_type
-            mds_scrpt += '(file="' + plt_name + '",width=580,height=580,units="px")\n'
+            mds_scrpt += '(file="' + plt_name + '",width=580,height=580,units="px",' + \
+                         'res=100, pointsize=12)\n'
             mds_scrpt += plt_scrpt + '\n'
             mds_scrpt += 'dev.off()\n'
 
