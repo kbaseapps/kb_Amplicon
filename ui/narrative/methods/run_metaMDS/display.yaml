@@ -1,10 +1,10 @@
 #
 # define display information
 #
-name: run_mds
+name: run_metaMDS
 
 tooltip: |
-    Perform MDS analysis on matrix data
+    Perform metaMDS analysis on matrix data
 
 screenshots: []
 
@@ -57,5 +57,5 @@ parameters :
             Output KBaseExperiments.MDSMatrix object name
 
 description : |
-    <p> Perform nMDS analysis on Matrix object </p>
+    <p> Perform metaMDS analysis on Matrix object </p>
 

@@ -60,7 +60,7 @@
         "service-mapping": {
             "url": "",
             "name": "kb_Amplicon",
-            "method": "run_mds",
+            "method": "run_metaMDS",
             "input_mapping": [
                 {
                     "narrative_system_variable": "workspace",
