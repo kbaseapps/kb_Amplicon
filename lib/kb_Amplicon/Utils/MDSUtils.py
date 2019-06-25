@@ -147,7 +147,7 @@ class MDSUtils:
         plt_scrpt = params.get('plot_script', '')
         if plt_scrpt and re.match("^plot\(\s*[a-zA-Z]+.*\)$", plt_scrpt):
             arr_plt = plt_scrpt.split(',')
-            arr_plt[0] = 'vg_data.mds'  # make sure to pass the correct data
+            arr_plt[0] = 'plot(vg_data.mds'  # make sure to pass the correct data
             plt_scrpt = (',').join(arr_plt)
             plt_type = params.get('plot_type', 'pdf')
             if not plt_type:
