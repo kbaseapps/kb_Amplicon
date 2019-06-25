@@ -86,11 +86,13 @@ class MDSUtils:
         # Function metaMDS returns an object of class metaMDS.
         mds_scrpt += 'vg_data.mds <- metaMDS(vg_data,' + mds_cfg + ')\n'
         mds_scrpt += 'vg_data.mds\n'
+
         # save the results in the memory
         # 1) store species ordination
         mds_scrpt += 'variableScores <- vg_data.mds$species\n'
         # 2) store site ordination
         mds_scrpt += 'sampleScores <- vg_data.mds$points\n'
+        # 3) store other ordination results
         mds_scrpt += 'stress <- vg_data.mds$stress\n'
         mds_scrpt += 'dist_metric <- vg_data.mds$distance\n'
         mds_scrpt += 'dist_matrix <- vg_data.mds$diss\n'
@@ -122,7 +124,7 @@ class MDSUtils:
         mds_scrpt += 'df <- data.frame(item_name,item_value,stringsAsFactors=FALSE)\n'
         mds_scrpt += 'write_json(toJSON(df),path="others.json",pretty=TRUE,auto_unbox=FALSE)\n'
 
-        # save mds plot
+        # save mds plots
         mds_scrpt += 'bmp(file="saving_mds_plot.bmp",width=6,height=4,units="in",res=100)\n'
         mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
         mds_scrpt += 'points(vg_data.mds)\n'
@@ -141,6 +143,17 @@ class MDSUtils:
         mds_scrpt += 'points(fig,"species",pch=21,col="green",bg="blue")\n'
         # mds_scrpt += 'text(fig, "species", col="blue", cex=0.9)\n'
         mds_scrpt += 'dev.off()\n'
+        # If there is user input plotting script:
+        plt_scrpt = params.get('plot_script', '')
+        if plt_scrpt and re.match("^plot\(\s*[a-zA-Z]+.*\)$", plt_scrpt):
+            plt_scrpt = re.sub("\s", '', plt_scrpt)
+            plt_scrpt = re.sub("([(][a-zA-Z]+.*,)", "(vg_data.mds,", plt_scrpt, 1)  # 1st occurrence
+            plt_type = params.get('plot_type', 'usr_plt_type')
+            plt_name = params.get('plot_name', 'usr_plt_name') + '.' + plt_type
+            mds_scrpt += plt_type
+            mds_scrpt += '(file="' + plt_name + '",width=6,height=4)\n'
+            mds_scrpt += plt_scrpt + '\n'
+            mds_scrpt += 'dev.off()\n'
 
         mds_rscript = 'mds_script.R'
         rscrpt_file_path = os.path.join(self.output_dir, mds_rscript)

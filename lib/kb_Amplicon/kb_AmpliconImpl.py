@@ -25,7 +25,7 @@ class kb_Amplicon:
     ######################################### noqa
     VERSION = "0.0.1"
     GIT_URL = "https://github.com/qzzhang/kb_Amplicon.git"
-    GIT_COMMIT_HASH = "6ccb41675dfb54e2ae749c4b083c1d8bfdae0d37"
+    GIT_COMMIT_HASH = "5816c5e90a70e044d1b3d7fa23d3a17f709f950e"
 
     #BEGIN_CLASS_HEADER
     #END_CLASS_HEADER
@@ -57,13 +57,17 @@ class kb_Amplicon:
            (default 2) metric - Int, if 1, perform metric MDS; otherwise,
            perform nonmetric MDS. (default 0) max_iter - iterations stop once
            a set number of max_iter iterations have occurred (default 300)
-           distance_metric - distance the ordination will be performed on
-           (Euclidean distance, Manhattan distance (city block distance) or
-           Bray distance) default to Bray distance) -> structure: parameter
-           "input_obj_ref" of type "obj_ref" (An X/Y/Z style reference),
-           parameter "workspace_name" of String, parameter "mds_matrix_name"
-           of String, parameter "n_components" of Long, parameter "metric" of
-           Long, parameter "max_iter" of Long, parameter "distance_metric" of
+           distance_metric - name of the distance the ordination will be
+           performed on (Euclidean distance, Manhattan distance (city block
+           distance) or Bray distance) default to Bray distance plot_script -
+           scripts entered by user for plotting plot_type - type of plot to
+           be created (bmp or pdf) plot_name - file name for the plot image
+           file) -> structure: parameter "input_obj_ref" of type "obj_ref"
+           (An X/Y/Z style reference), parameter "workspace_name" of String,
+           parameter "mds_matrix_name" of String, parameter "n_components" of
+           Long, parameter "metric" of Long, parameter "max_iter" of Long,
+           parameter "distance_metric" of String, parameter "plot_script" of
+           String, parameter "plot_type" of String, parameter "plot_name" of
            String
         :returns: instance of type "MDSOutput" (Ouput of the run_metaMDS
            function mds_ref: object reference (to an object of the MDSMatrix

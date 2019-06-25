@@ -69,7 +69,11 @@ module kb_Amplicon {
         n_components - desired number of n dimensions is chosen for the ordination (default 2)
         metric - Int, if 1, perform metric MDS; otherwise, perform nonmetric MDS. (default 0)
         max_iter - iterations stop once a set number of max_iter iterations have occurred (default 300)
-        distance_metric - distance the ordination will be performed on (Euclidean distance, Manhattan distance (city block distance) or Bray distance) default to Bray distance
+        distance_metric - name of the distance the ordination will be performed on (Euclidean distance,
+                          Manhattan distance (city block distance) or Bray distance) default to Bray distance
+        plot_script - scripts entered by user for plotting
+        plot_type - type of plot to be created (bmp or pdf)
+        plot_name - file name for the plot image file
     */
     typedef structure {
         obj_ref input_obj_ref;
@@ -79,6 +83,9 @@ module kb_Amplicon {
         int metric;
         int max_iter;
         string distance_metric;
+        string plot_script;
+        string plot_type;
+        string plot_name;
     } MDSParams;
 
     /* Ouput of the run_metaMDS function

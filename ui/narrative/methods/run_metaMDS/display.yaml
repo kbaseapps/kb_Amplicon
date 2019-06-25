@@ -48,6 +48,24 @@ parameters :
         short-hint : |
             Maximun Number of Iterations
 
+    plot_script :
+        ui-name : |
+            script for plotting results
+        short-hint : |
+            script for plotting results
+
+    plot_type :
+        ui-name : |
+            plot type
+        short-hint : |
+            plot type
+
+    plot_name :
+        ui-name : |
+            plot file name
+        short-hint : |
+            plot file name
+
     mds_matrix_name:
         ui-name: |
             MDS Matrix Object Name
