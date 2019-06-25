@@ -66,11 +66,17 @@ class kb_AmpliconTest(unittest.TestCase):
         #
         # Check returned data with
         # self.assertEqual(ret[...], ...) or other unittest methods
-        ret = self.serviceImpl.run_metaMDS(self.ctx, {'workspace_name': self.wsName,
-                                                      'input_obj_ref': '40925/Incubation-16S',
-                                                      'n_components': 3,
-                                                      'max_iter': 20,
-                                                      'mds_matrix_name': 'output_mds_from_obj'})
+        ret = self.serviceImpl.run_metaMDS(
+            self.ctx,
+            {'workspace_name': self.wsName,
+             'input_obj_ref': '40925/Incubation-16S',
+             'n_components': 3,
+             'max_iter': 20,
+             'plot_script': 'plot(my_data.mds,type="t",display="sites")',
+             'plot_type': 'ps',
+             'plot_name': '',
+             'mds_matrix_name': 'output_mds_from_obj'})
+
         self.assertTrue(ret[0]['mds_ref'])
         self.assertTrue(ret[0]['report_name'])
         self.assertTrue(ret[0]['report_ref'])
