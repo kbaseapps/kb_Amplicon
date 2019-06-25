@@ -78,24 +78,19 @@
                     {
                       "value": "pdf",
                       "display": "pdf"
-                    },
-                    {
+                    },{
                      "value": "bmp",
                      "display": "bmp"
-                    },
-                    {
-                      "value": "jpg",
-                      "display": "jpg"
-                    },
-                    {
+                    },{
                       "value": "jpeg",
                       "display": "jpeg"
-                    },
-                    {
+                    },{
+                      "value": "png",
+                      "display": "png"
+                    },{
                       "value": "tiff",
                       "display": "tiff"
-                    },
-                    {
+                    },{
                       "value": "ps",
                       "display": "ps"
                     }

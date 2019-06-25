@@ -125,44 +125,53 @@ class MDSUtils:
         mds_scrpt += 'write_json(toJSON(df),path="others.json",pretty=TRUE,auto_unbox=FALSE)\n'
 
         # save mds plots
-        mds_scrpt += 'bmp(file="saving_mds_plot.bmp",width=6,height=4,units="in",res=100)\n'
+        mds_scrpt += 'bmp(file="saving_mds_plot.bmp",width=480,height=480,units="px",' + \
+                     'res=100, pointsize=12)\n'
         mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
         mds_scrpt += 'points(vg_data.mds)\n'
         mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="saving_mds_plot.pdf",width=6,height=4)\n'
+        mds_scrpt += 'pdf(file="saving_mds_plot.pdf",width=480,height=480,units="px",' + \
+                     'res=100, pointsize=12)\n'
         mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
         mds_scrpt += 'points(vg_data.mds)\n'
         mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="mds_plot_withlabel.pdf",width=6,height=4)\n'
+        mds_scrpt += 'pdf(file="mds_plot_withlabel.pdf",width=480,height=480,units="px",' + \
+                     'res=100, pointsize=12)\n'
         mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
         mds_scrpt += 'ordilabel(vg_data.mds,dis="sites",cex=1.2,font=3,fill="hotpink",col="blue")\n'
         mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="mds_plot_withcolor.pdf",width=6,height=4)\n'
+        mds_scrpt += 'pdf(file="mds_plot_withcolor.pdf",width=480,height=480,units="px",' + \
+                     'res=100, pointsize=12)\n'
         mds_scrpt += 'fig <- ordiplot(vg_data.mds,type="none")\n'
         mds_scrpt += 'points(fig,"sites",pch=21,col="red",bg="yellow")\n'
         mds_scrpt += 'points(fig,"species",pch=21,col="green",bg="blue")\n'
         # mds_scrpt += 'text(fig, "species", col="blue", cex=0.9)\n'
         mds_scrpt += 'dev.off()\n'
         # If there is user input plotting script:
-        plt_scrpt = params.get('plot_script', '')
+        plt_scrpt = params.get('plot_script', '').lower()
         if plt_scrpt and re.match("^plot\(\s*[a-zA-Z]+.*\)$", plt_scrpt):
             arr_plt = plt_scrpt.split(',')
             arr_plt[0] = 'plot(vg_data.mds'  # make sure to pass the correct data
             plt_scrpt = (',').join(arr_plt)
-            plt_type = params.get('plot_type', 'pdf')
+            plt_type = params.get('plot_type', 'pdf').lower()
             if not plt_type:
                 plt_type = 'pdf'
 
-            plt_name = params.get('plot_name', 'usr_plt_name')
+            plt_name = params.get('plot_name', 'usr_plt_name').lower()
             if not plt_name:
                 plt_name = 'usr_plt_name'
             plt_name += '.' + plt_type
 
             if plt_type == 'ps':
                 plt_type = 'postscript'
+            if plt_type == 'jpg':
+                plt_type = 'jpeg'
+            if plt_type == 'ps':
+                plt_type = 'postscript'
 
             mds_scrpt += plt_type
-            mds_scrpt += '(file="' + plt_name + '",width=6,height=4)\n'
+            mds_scrpt += '(file="' + plt_name + '",width=480,height=480,units="px",' + \
+                         'res=100, pointsize=12)\n'
             mds_scrpt += plt_scrpt + '\n'
             mds_scrpt += 'dev.off()\n'
 
@@ -380,7 +389,7 @@ class MDSUtils:
         for root, folders, files in os.walk(mds_outdir):
             # Find the image files by their extensions.
             for f in files:
-                if re.match('^[a-zA-Z]+.*.(jpeg|jpg|bmp|tiff|pdf|ps)$', f):
+                if re.match('^[a-zA-Z]+.*.(jpeg|jpg|bmp|png|tiff|pdf|ps)$', f):
                     absolute_path = os.path.join(root, f)
                     logging.info("Adding {} to plot archive.".format(absolute_path))
                     mds_plots.append(absolute_path)
