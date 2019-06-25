@@ -55,8 +55,8 @@ class kb_AmpliconTest(unittest.TestCase):
 
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
     # Uncomment to skip this test
-    # @unittest.skip("skipped test_run_mds_with_objref")
-    def test_run_mds_with_objref(self):
+    # @unittest.skip("skipped test_run_metaMDS_with_objref")
+    def test_run_metaMDS_with_objref(self):
         # Prepare test objects in workspace if needed using
         # self.getWsClient().save_objects({'workspace': self.getWsName(),
         #                                  'objects': []})
@@ -66,11 +66,11 @@ class kb_AmpliconTest(unittest.TestCase):
         #
         # Check returned data with
         # self.assertEqual(ret[...], ...) or other unittest methods
-        ret = self.serviceImpl.run_mds(self.ctx, {'workspace_name': self.wsName,
-                                                  'input_obj_ref': '40925/Incubation-16S',
-                                                  'n_components': 3,
-                                                  'max_iter': 20,
-                                                  'mds_matrix_name': 'output_mds_from_obj'})
+        ret = self.serviceImpl.run_metaMDS(self.ctx, {'workspace_name': self.wsName,
+                                                      'input_obj_ref': '40925/Incubation-16S',
+                                                      'n_components': 3,
+                                                      'max_iter': 20,
+                                                      'mds_matrix_name': 'output_mds_from_obj'})
         self.assertTrue(ret[0]['mds_ref'])
         self.assertTrue(ret[0]['report_name'])
         self.assertTrue(ret[0]['report_ref'])
@@ -85,8 +85,8 @@ class kb_AmpliconTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'saving_mds_plot.pdf')))
 
     # Uncomment to skip this test
-    # @unittest.skip("skipped test_MDSUtilsrun_mds_with_file")
-    def test_MDSUtils_run_mds_with_file(self):
+    # @unittest.skip("skipped test_MDSUtilsrun_metaMDS_with_file")
+    def test_MDSUtils_run_metaMDS_with_file(self):
         # Prepare test objects in workspace if needed using
         # self.getWsClient().save_objects({'workspace': self.getWsName(),
         #                                  'objects': []})
@@ -98,7 +98,7 @@ class kb_AmpliconTest(unittest.TestCase):
         # self.assertEqual(ret[...], ...) or other unittest methods
         mds_util = MDSUtils(self.cfg)
 
-        ret = mds_util.run_mds_with_file({
+        ret = mds_util.run_metaMDS_with_file({
             'workspace_name': self.wsName,
             'datafile': 'smpl_16s.csv',
             'n_components': 3,

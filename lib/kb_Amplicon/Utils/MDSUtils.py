@@ -430,9 +430,9 @@ class MDSUtils:
         self.output_dir = os.path.join(self.working_dir, self.MDS_OUT_DIR)
         self._mkdir_p(self.output_dir)
 
-    def run_mds(self, params):
+    def run_metaMDS(self, params):
         """
-        run_mds: perform MDS analysis on matrix
+        run_metaMDS: perform metaMDS analysis on matrix
         :param input_obj_ref: object reference of a matrix
         :param workspace_name: the name of the workspace
         :param mds_matrix_name: name of MDS (KBaseExperiments.MDSMatrix) object
@@ -442,7 +442,7 @@ class MDSUtils:
         :param distance_metric: distance the ordination will be performed on, default to "bray"
         """
 
-        logging.info('--->\nrunning mds with input\n' +
+        logging.info('--->\nrunning metaMDS with input\n' +
                      'params:\n{}'.format(json.dumps(params, indent=1)))
 
         self._validate_run_mds_params(params)
@@ -474,7 +474,7 @@ class MDSUtils:
                 matrix_df.to_csv(m_file, sep='\t')
 
             params['datafile'] = matrix_data_file
-            exitCode = self.run_mds_with_file(params)
+            exitCode = self.run_metaMDS_with_file(params)
         else:
             err_msg = 'Ooops! [{}] is not supported.\n'.format(obj_type)
             err_msg += 'Please provide a KBaseMatrices object'
@@ -484,7 +484,7 @@ class MDSUtils:
             raise ValueError('Caught subprocess.CalledProcessError while calling R.')
 
         # saving the mds_matrix object
-        # read mds results from files into data frames
+        # read metaMDS results from files into data frames
         dist_matrix_df = pd.read_csv(os.path.join(self.output_dir, "dist_matrix.csv"))
         mds_params_df = pd.read_json(os.path.join(self.output_dir, "others.json"))
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"))
@@ -502,9 +502,9 @@ class MDSUtils:
         returnVal.update(report_output)
         return returnVal
 
-    def run_mds_with_file(self, params):
+    def run_metaMDS_with_file(self, params):
         """
-        run_mds_with_file: perform MDS analysis on matrix
+        run_metaMDS_with_file: perform metaMDS analysis on matrix
         :param datafile: a file that contains the matrix data
         :param workspace_name: the name of the workspace
         :param mds_matrix_name: name of MDS (KBaseExperiments.MDSMatrix) object
@@ -514,7 +514,7 @@ class MDSUtils:
         :param distance_metric: distance the ordination will be performed on, default to "bray"
         """
 
-        logging.info('--->\nrunning mds with input \n' +
+        logging.info('--->\nrunning metaMDS with input \n' +
                      'params:\n{}'.format(json.dumps(params, indent=1)))
 
         rscrpt_file = self._build_rMDS_script(params)

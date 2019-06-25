@@ -338,10 +338,10 @@ class Application(object):
         self.serverlog.set_log_level(6)
         self.rpc_service = JSONRPCServiceCustom()
         self.method_authentication = dict()
-        self.rpc_service.add(impl_kb_Amplicon.run_mds,
-                             name='kb_Amplicon.run_mds',
+        self.rpc_service.add(impl_kb_Amplicon.run_metaMDS,
+                             name='kb_Amplicon.run_metaMDS',
                              types=[dict])
-        self.method_authentication['kb_Amplicon.run_mds'] = 'required'  # noqa
+        self.method_authentication['kb_Amplicon.run_metaMDS'] = 'required'  # noqa
         self.rpc_service.add(impl_kb_Amplicon.status,
                              name='kb_Amplicon.status',
                              types=[dict])
