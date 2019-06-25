@@ -152,6 +152,8 @@ class MDSUtils:
             plt_type = params.get('plot_type', 'pdf')
             if not plt_type:
                 plt_type = 'pdf'
+            if plt_type == 'ps':
+                plt_type = 'postscript'
 
             plt_name = params.get('plot_name', 'usr_plt_name')
             if not plt_name:
