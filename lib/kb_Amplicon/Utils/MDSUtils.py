@@ -150,6 +150,8 @@ class MDSUtils:
             arr_plt = plt_scrpt.split(',')
             arr_plt[0] = 'plot(vg_data.mds'  # make sure to pass the correct data
             plt_scrpt = (',').join(arr_plt)
+            if len(arr_plt) == 1:
+                plt_scrpt += ')'
             plt_type = params.get('plot_type', 'pdf').lower()
             if not plt_type:
                 plt_type = 'pdf'
