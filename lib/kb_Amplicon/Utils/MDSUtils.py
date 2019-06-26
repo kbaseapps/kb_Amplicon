@@ -164,7 +164,7 @@ class MDSUtils:
             if plt_type == 'ps':
                 plt_type = 'postscript'
                 mds_scrpt += plt_type
-                mds_scrpt += '(file="' + plt_name + '")'
+                mds_scrpt += '(file="' + plt_name + '")\n'
             if plt_type in ['jpg', 'jpeg', 'bmp', 'png', 'tiff']:
                 mds_scrpt += plt_type
                 mds_scrpt += '(file="' + plt_name + '",width=580,height=580,units="px",' + \
@@ -391,8 +391,6 @@ class MDSUtils:
                     absolute_path = os.path.join(root, f)
                     logging.info("Adding file {} to plot archive.".format(absolute_path))
                     mds_plots.append(absolute_path)
-
-        logging.info("Plot files in plot archive:\n".format(json.dumps(mds_plots, indent=2)))
 
         visualization_content = ''
 
