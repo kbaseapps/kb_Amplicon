@@ -343,12 +343,12 @@ class MDSUtils:
                 for folder_name in folders:
                     absolute_fpath = os.path.join(root, folder_name)
                     relative_fpath = os.path.join(os.path.basename(root), folder_name)
-                    logging.info("Adding {} to archive.".format(absolute_fpath))
+                    logging.info("Adding folder {} to archive.".format(absolute_fpath))
                     ziph.write(absolute_fpath, relative_fpath)
                 for f in files:
                     absolute_path = os.path.join(root, f)
                     relative_path = os.path.join(os.path.basename(root), f)
-                    logging.info("Adding {} to archive.".format(absolute_path))
+                    logging.info("Adding file {} to archive.".format(absolute_path))
                     ziph.write(absolute_path, relative_path)
 
         logging.info("{} created successfully.".format(output_path))
@@ -388,8 +388,10 @@ class MDSUtils:
             for f in files:
                 if re.match('^[a-zA-Z]+.*.(jpeg|jpg|bmp|png|tiff|pdf|ps)$', f):
                     absolute_path = os.path.join(root, f)
-                    logging.info("Adding {} to plot archive.".format(absolute_path))
+                    logging.info("Adding file {} to plot archive.".format(absolute_path))
                     mds_plots.append(absolute_path)
+
+        logging.debug("Plot files in plot archive:\n".format(json.dumps(mds_plots, indent=2)))
 
         visualization_content = ''
 
