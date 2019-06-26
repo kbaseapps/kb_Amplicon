@@ -168,7 +168,7 @@ class MDSUtils:
             if plt_type == 'tiff':
                 mds_scrpt += plt_type
                 mds_scrpt += '(file="' + plt_name + '",width=4,height=4,units="in",' + \
-                             'type="tifflzw",res=300)\n'
+                             'compression="lzw",res=300)\n'
             if plt_type in ['jpg', 'jpeg', 'bmp', 'png']:
                 mds_scrpt += plt_type
                 mds_scrpt += '(file="' + plt_name + '",width=580,height=580,units="px",' + \
