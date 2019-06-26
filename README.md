@@ -34,7 +34,7 @@ After making any additional changes to this repo, run `kb-sdk test` again to ver
 
 # Installation from another module
 
-To use this code in another SDK module, call `kb-sdk install kb_Vegan` in the other module's root directory.
+To use this code in another SDK module, call `kb-sdk install kb_Amplicon` in the other module's root directory.
 
 # Help
 
