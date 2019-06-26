@@ -177,6 +177,8 @@ class MDSUtils:
             mds_scrpt += plt_scrpt + '\n'
             mds_scrpt += 'dev.off()\n'
 
+        logging.info('R script: {}'.format(mds_scrpt))
+
         mds_rscript = 'mds_script.R'
         rscrpt_file_path = os.path.join(self.output_dir, mds_rscript)
 
