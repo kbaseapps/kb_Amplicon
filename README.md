@@ -14,7 +14,7 @@ For ecological data, samples should be standardized by sample size to avoid ordi
 
 Generate a distance (dissimiliarity) matrix from the multivariate data:
 if distance_metric == 'bray', call metaMDS with the default Bray distance setting (that generates the Bray-Curtis dissimilarity matrix)
-else call metaMDS with the euclidean distance matrix
+else call metaMDS with the euclidean distance matrix.
 
 
 You will need to have the SDK installed to use this module. [Learn more about the SDK and how to use it](https://kbase.github.io/kb_sdk_docs/).
