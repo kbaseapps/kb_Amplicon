@@ -159,16 +159,17 @@ class MDSUtils:
                 plt_name = 'usr_plt_name'
             plt_name += '.' + plt_type
 
-            if plt_type == 'ps':
-                plt_type = 'postscript'
             if plt_type == 'jpg':
                 plt_type = 'jpeg'
             if plt_type == 'ps':
                 plt_type = 'postscript'
+                mds_scrpt += plt_type
+                mds_scrpt += '(file="' + plt_name + '")'
+            if plt_type in ['jpg', 'jpeg', 'bmp', 'png', 'tiff']:
+                mds_scrpt += plt_type
+                mds_scrpt += '(file="' + plt_name + '",width=580,height=580,units="px",' + \
+                             'res=100, pointsize=12)\n'
 
-            mds_scrpt += plt_type
-            mds_scrpt += '(file="' + plt_name + '",width=580,height=580,units="px",' + \
-                         'res=100, pointsize=12)\n'
             mds_scrpt += plt_scrpt + '\n'
             mds_scrpt += 'dev.off()\n'
 
@@ -391,7 +392,7 @@ class MDSUtils:
                     logging.info("Adding file {} to plot archive.".format(absolute_path))
                     mds_plots.append(absolute_path)
 
-        logging.debug("Plot files in plot archive:\n".format(json.dumps(mds_plots, indent=2)))
+        logging.info("Plot files in plot archive:\n".format(json.dumps(mds_plots, indent=2)))
 
         visualization_content = ''
 
