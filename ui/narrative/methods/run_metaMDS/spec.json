@@ -22,6 +22,28 @@
             }
         },
         {
+            "id" : "dimension",
+            "optional" : false,
+            "advanced" : false,
+            "allow_multiple" : false,
+            "default_values" : ["row"],
+            "field_type" : "dropdown",
+            "dropdown_options":
+            {
+                "options":
+                [
+                {
+                    "display": "row",
+                    "value": "row"
+                },
+                {
+                    "display": "column",
+                    "value": "col"
+                }
+                ]
+        }
+        },
+        {
             "id" : "n_components",
             "optional" : false,
             "advanced" : false,
@@ -54,6 +76,55 @@
               "valid_ws_types" : ["KBaseExperiments.PCAMatrix"],
               "is_output_name" : true
             }
+        },
+        {
+          "id" : "attribute_mapping_obj_ref",
+          "optional" : true,
+          "advanced" : false,
+          "allow_multiple" : false,
+          "default_values" : [ "" ],
+          "field_type" : "text",
+          "text_options" : {
+            "valid_ws_types" : ["KBaseExperiments.AttributeMapping"]
+          }
+        },
+        {
+          "id" : "attribute_color",
+          "optional" : false,
+          "advanced" : true,
+          "allow_multiple" : false,
+          "default_values" : [ "" ],
+          "field_type" : "textsubdata",
+          "textsubdata_options" : {
+            "subdata_selection": {
+              "parameter_id" : "attribute_mapping_obj_ref",
+              "subdata_included" : ["attributes/[*]/attribute"],
+              "path_to_subdata": ["attributes"],
+              "selection_id": "attribute"
+              },
+            "multiselection":false,
+            "show_src_obj":false,
+            "allow_custom":false
+          }
+        },
+        {
+          "id" : "attribute_size",
+          "optional" : false,
+          "advanced" : true,
+          "allow_multiple" : false,
+          "default_values" : [ "" ],
+          "field_type" : "textsubdata",
+          "textsubdata_options" : {
+            "subdata_selection": {
+              "parameter_id" : "attribute_mapping_obj_ref",
+              "subdata_included" : ["attributes/[*]/attribute"],
+              "path_to_subdata": ["attributes"],
+              "selection_id": "attribute"
+              },
+            "multiselection":false,
+            "show_src_obj":false,
+            "allow_custom":false
+          }
         },
         {
             "id" : "plot_script",
@@ -107,7 +178,29 @@
             "text_options" : {
               "validate_as" : "text"
             }
-        }  
+        }
+    ],
+    "parameter-groups": [
+    {
+      "id": "color_marker_by",
+      "parameters": [
+        "attribute_color"
+      ],
+      "optional": true,
+      "allow_multiple": false,
+      "with_border": false,
+      "advanced" : false
+    },
+    {
+      "id": "scale_size_by",
+      "parameters": [
+        "attribute_size"
+      ],
+      "optional": true,
+      "allow_multiple": false,
+      "with_border": false,
+      "advanced" : false
+    }
     ],
     "behavior": {
         "service-mapping": {
@@ -123,11 +216,22 @@
                     "target_property": "input_obj_ref",
                     "target_type_transform": "resolved-ref"
                 },{
+                    "input_parameter" : "attribute_mapping_obj_ref",
+                    "target_property" : "attribute_mapping_obj_ref",
+                    "target_type_transform": "resolved-ref"
+                },{
                     "input_parameter" : "n_components",
                     "target_property" : "n_components"
                 },{
                     "input_parameter" : "max_iter",
                     "target_property" : "max_iter"
+                },{
+                    "input_parameter" : "scale_size_by",
+                    "target_property" : "scale_size_by"
+                },
+                {
+                    "input_parameter" : "color_marker_by",
+                    "target_property" : "color_marker_by"
                 },{
                     "input_parameter" : "mds_matrix_name",
                     "target_property" : "mds_matrix_name"

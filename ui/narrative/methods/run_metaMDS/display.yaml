@@ -36,6 +36,22 @@ parameters :
         long-hint  : |
             One of KBaseMatrices object
 
+    attribute_mapping_obj_ref:
+        ui-name: |
+            AttributeMapping Object
+        short-hint: |
+            Select associated KBaseExperiments.AttributeMapping object
+        long-hint: |
+            Select associated KBaseExperiments.AttributeMapping object
+
+    dimension:
+        ui-name: |
+            Perform MDS On
+        short-hint: |
+            Perform MDS on column or row
+        long-hint: |
+            Perform MDS on column or row
+
     n_components :
         ui-name : |
             Number of Component
@@ -66,6 +82,22 @@ parameters :
         short-hint : |
             plot file name
 
+    attribute_color:
+        ui-name: |
+            Attribute
+        short-hint: |
+            Select an attribute for plot coloring
+        long-hint: |
+            Select an attribute for plot coloring
+
+    attribute_size:
+        ui-name: |
+            Attribute
+        short-hint: |
+            Select an attribute for plot sizing
+        long-hint: |
+            Select an attribute for plot sizing
+
     mds_matrix_name:
         ui-name: |
             MDS Matrix Object Name
@@ -73,6 +105,14 @@ parameters :
             Output KBaseExperiments.MDSMatrix object name
         long-hint  : |
             Output KBaseExperiments.MDSMatrix object name
+
+parameter-groups:
+    color_marker_by:
+        ui-name: Group Marker By
+        short-hint:  Select an attribute for plot coloring
+    scale_size_by:
+        ui-name: Scale Marker Size By
+        short-hint:  Select an attribute for plot sizing
 
 description : |
     <p> Perform metaMDS analysis on Matrix object </p>

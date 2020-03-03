@@ -79,6 +79,7 @@ module kb_Amplicon {
         obj_ref input_obj_ref;
         string workspace_name;
         string mds_matrix_name;
+        string dimension;
         int n_components;
         int metric;
         int max_iter;
@@ -86,6 +87,8 @@ module kb_Amplicon {
         string plot_script;
         string plot_type;
         string plot_name;
+        mapping<string, string> scale_size_by;
+        mapping<string, string> color_marker_by;
     } MDSParams;
 
     /* Ouput of the run_metaMDS function
