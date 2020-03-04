@@ -87,6 +87,7 @@ module kb_Amplicon {
         string plot_script;
         string plot_type;
         string plot_name;
+        obj_ref attribute_mapping_obj_ref;
         mapping<string, string> scale_size_by;
         mapping<string, string> color_marker_by;
     } MDSParams;
