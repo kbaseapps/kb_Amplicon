@@ -10,6 +10,10 @@ import re
 import subprocess
 
 import pandas as pd
+import plotly.offline as pyo
+import plotly.graph_objs as go
+import plotly.express as px
+from plotly.offline import plot
 
 from kb_Amplicon.Utils.DataUtil import DataUtil
 from installed_clients.DataFileUtilClient import DataFileUtil
@@ -409,6 +413,11 @@ class MDSUtils:
             visualization_content += 'src="{}" '.format(os.path.basename(mds_plot))
             visualization_content += 'style="border:none;"></iframe>\n<p></p>\n'
 
+        if self.color_marker_by is not None:
+            visualization_content += '<iframe height="900px" width="100%" '
+            visualization_content += 'src="{}" '.format(os.path.basename(self._plot_with_grouping()))
+            visualization_content += 'style="border:none;"></iframe>\n<p></p>\n'
+
         with open(result_file_path, 'w') as result_file:
             with open(os.path.join(os.path.dirname(__file__), 'templates', 'mds_template.html'),
                       'r') as report_template_file:
@@ -455,6 +464,38 @@ class MDSUtils:
 
         return report_output
 
+    def _plot_with_grouping(self):
+
+        logging.info('Plotting with grouping')
+
+        dfu = DataFileUtil(self.callback_url)
+        mdf = dfu.get_objects({'object_refs': [self.attribute_mapping_obj_ref]})
+        attr_l = mdf['data'][0]['data']['attributes']
+
+        category_name = self.color_marker_by
+        grouping_index = 0
+        for i in range(len(attr_l)):
+            if attr_l[i]['attribute'] == category_name:
+                grouping_index = i
+
+        grouping_data = []
+        mdf_indx = mdf['data'][0]['data']['instances'].keys()
+        for sample in mdf_indx:
+            grouping_data.append(mdf['data'][0]['data']['instances'][sample][grouping_index])
+
+        mdf = pd.DataFrame(grouping_data, index=mdf_indx, columns=[category_name])
+        site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"))
+
+        site_ordin_df['Group'] = None
+        for ID in site_ordin_df.index:
+            site_ordin_df['Group'].loc[ID] = mdf[category_name].loc[ID]
+
+        fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="group", hover_name=site_ordin_df.index)
+
+        plotly_html_file_path = os.path.join(self.output_dir, "plotly_fig.html")
+        plot(fig, filename=plotly_html_file_path)
+        return plotly_html_file_path
+
     def __init__(self, config):
 
         self.ws_url = config["workspace-url"]
@@ -468,6 +509,11 @@ class MDSUtils:
         self.dfu = DataFileUtil(self.callback_url)
         self.output_dir = os.path.join(self.working_dir, self.MDS_OUT_DIR)
         self._mkdir_p(self.output_dir)
+
+        # Variables for Grouping Features
+        self.color_marker_by
+        self.scale_size_by
+        self.attribute_mapping_obj_ref
 
     def run_metaMDS(self, params):
         """
@@ -485,6 +531,15 @@ class MDSUtils:
                      'params:\n{}'.format(json.dumps(params, indent=1)))
 
         self._validate_run_mds_params(params)
+
+        # Variables for Grouping Features
+        self.attribute_mapping_obj_ref = params.get('attribute_mapping_obj_ref')
+        self.color_marker_by = params.get('color_marker_by')
+        if self.color_marker_by is not None:
+            self.color_marker_by = self.color_marker_by['meta_group'][0]
+        self.scale_size_by = params.get('scale_size_by')
+        if self.scale_size_by is not None:
+            self.scale_size_by = self.scale_size_by['meta_group'][0]
 
         input_obj_ref = params.get(self.PARAM_IN_MATRIX)
         workspace_name = params.get(self.PARAM_IN_WS)
@@ -507,6 +562,8 @@ class MDSUtils:
             row_ids = obj_data['data']['row_ids']
             col_ids = obj_data['data']['col_ids']
             matrix_df = pd.DataFrame(matrix_tab, index=row_ids, columns=col_ids)
+            # Transpose DataFrame
+            matrix_df = matrix_df.T
 
             matrix_data_file = os.path.join(self.output_dir, obj_name + '.csv')
             with open(matrix_data_file, 'w') as m_file:

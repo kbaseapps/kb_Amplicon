@@ -17,7 +17,8 @@ RUN pip install pandas==0.23.4 \
     && pip install xlsxwriter \
     && pip install dotmap \
     && pip install matplotlib \
-    && pip install scipy
+    && pip install scipy \
+    && pip install plotly==4.5.2
 
 RUN pip install natsort
 
