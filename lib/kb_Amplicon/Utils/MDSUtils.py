@@ -391,18 +391,21 @@ class MDSUtils:
         logging.info('Start generating html report for MDS results...')
         html_report = list()
 
-        result_dir = os.path.join(self.working_dir, str(uuid.uuid4()))
-        self._mkdir_p(result_dir)
-        result_file_path = os.path.join(result_dir, 'mds_result.html')
+        if self.color_marker_by is not None:
+            self._plot_with_grouping()
 
         mds_plots = list()
         for root, folders, files in os.walk(mds_outdir):
             # Find the image files by their extensions.
             for f in files:
-                if re.match('^[a-zA-Z]+.*.(jpeg|jpg|bmp|png|tiff|pdf|ps)$', f):
+                if re.match('^[a-zA-Z]+.*.(jpeg|jpg|bmp|png|tiff|pdf|ps|html)$', f):
                     absolute_path = os.path.join(root, f)
                     logging.info("Adding file {} to plot archive.".format(absolute_path))
                     mds_plots.append(absolute_path)
+
+        result_dir = os.path.join(self.working_dir, str(uuid.uuid4()))
+        self._mkdir_p(result_dir)
+        result_file_path = os.path.join(result_dir, 'mds_result.html')
 
         visualization_content = ''
 
@@ -413,10 +416,6 @@ class MDSUtils:
             visualization_content += 'src="{}" '.format(os.path.basename(mds_plot))
             visualization_content += 'style="border:none;"></iframe>\n<p></p>\n'
 
-        if self.color_marker_by is not None:
-            visualization_content += '<iframe height="900px" width="100%" '
-            visualization_content += 'src="{}" '.format(os.path.basename(self._plot_with_grouping()))
-            visualization_content += 'style="border:none;"></iframe>\n<p></p>\n'
 
         with open(result_file_path, 'w') as result_file:
             with open(os.path.join(os.path.dirname(__file__), 'templates', 'mds_template.html'),

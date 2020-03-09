@@ -18,6 +18,7 @@ RUN pip install pandas==0.23.4 \
     && pip install dotmap \
     && pip install matplotlib \
     && pip install scipy \
+    && pip install jinja2 \
     && pip install plotly==4.5.2
 
 RUN pip install natsort
