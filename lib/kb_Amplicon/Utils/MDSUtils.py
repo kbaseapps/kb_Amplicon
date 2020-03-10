@@ -465,7 +465,7 @@ class MDSUtils:
 
     def _plot_with_grouping(self):
 
-        logging.info('Plotting with grouping')
+        logging.info('Plotting with grouping: "{}", and "{}"'.format(self.color_marker_by, self.scale_size_by))
 
         dfu = DataFileUtil(self.callback_url)
         mdf = dfu.get_objects({'object_refs': [self.attribute_mapping_obj_ref]})
