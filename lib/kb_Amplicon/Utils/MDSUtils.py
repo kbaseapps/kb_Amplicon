@@ -391,7 +391,7 @@ class MDSUtils:
         logging.info('Start generating html report for MDS results...')
         html_report = list()
 
-        if self.color_marker_by is not None:
+        if self.color_marker_by is not None or self.scale_size_by is not None:
             self._plot_with_grouping()
 
         mds_plots = list()
@@ -471,25 +471,44 @@ class MDSUtils:
         mdf = dfu.get_objects({'object_refs': [self.attribute_mapping_obj_ref]})
         attr_l = mdf['data'][0]['data']['attributes']
 
-        category_name = self.color_marker_by
-        grouping_index = 0
+        color_index = None
+        size_index = None
         for i in range(len(attr_l)):
-            if attr_l[i]['attribute'] == category_name:
-                grouping_index = i
+            if attr_l[i]['attribute'] == self.color_marker_by:
+                color_index = i
+            if attr_l[i]['attribute'] == self.scale_size_by:
+                size_index = i
 
-        grouping_data = []
+        color_data = []
+        size_data = []
         mdf_indx = mdf['data'][0]['data']['instances'].keys()
         for sample in mdf_indx:
-            grouping_data.append(mdf['data'][0]['data']['instances'][sample][grouping_index])
+            if color_index is not None:
+                color_data.append(mdf['data'][0]['data']['instances'][sample][color_index])
+            if size_index is not None:
+                size_data.append(mdf['data'][0]['data']['instances'][sample][size_index])
 
-        mdf = pd.DataFrame(grouping_data, index=mdf_indx, columns=[category_name])
+        mdf = pd.DataFrame(index=mdf_indx, columns=[self.color_marker_by, self.scale_size_by])
+        if color_index is not None:
+            mdf[self.color_marker_by] = color_data
+        if size_index is not None:
+            mdf[self.scale_size_by] = size_data
+
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"))
 
-        site_ordin_df['Group'] = None
+        site_ordin_df['color'] = None
+        site_ordin_df['size'] = None
         for ID in site_ordin_df.index:
-            site_ordin_df['Group'].loc[ID] = mdf[category_name].loc[ID]
+            site_ordin_df['color'].loc[ID] = mdf[self.color_marker_by].loc[ID]
+            site_ordin_df['size'].loc[ID] = mdf[self.scale_size_by].loc[ID]
 
-        fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="group", hover_name=site_ordin_df.index)
+        if self.color_marker_by is not None and self.scale_size_by is not None:
+            fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="color", size="size",
+                             hover_name=site_ordin_df.index)
+        elif self.color_marker_by is not None:
+            fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="color", hover_name=site_ordin_df.index)
+        elif self.scale_size_by is not None:
+            fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", size="size", hover_name=site_ordin_df.index)
 
         plotly_html_file_path = os.path.join(self.output_dir, "plotly_fig.html")
         plot(fig, filename=plotly_html_file_path)
