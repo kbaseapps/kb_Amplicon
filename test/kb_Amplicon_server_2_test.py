@@ -69,12 +69,19 @@ class kb_AmpliconTest(unittest.TestCase):
         ret = self.serviceImpl.run_metaMDS(
             self.ctx,
             {'workspace_name': self.wsName,
-             'input_obj_ref': '40925/Incubation-16S',
-             'n_components': 3,
+             'input_obj_ref': '37967/3/2',
+             'n_components': 2,
              'max_iter': 20,
              'plot_script': 'plot(my_data.mds,type="t",display="sites")',
              'plot_type': 'ps',
              'plot_name': '',
+             'attribute_mapping_obj_ref': '37967/4/1',
+             'scale_size_by': {
+                            'meta_group': ['Coordinate Precision?']
+                            },
+             'color_marker_by': {
+                            'meta_group': ['Field name (informal classification)']
+                            },
              'mds_matrix_name': 'output_mds_from_obj'})
 
         self.assertTrue(ret[0]['mds_ref'])
@@ -85,10 +92,11 @@ class kb_AmpliconTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'others.json')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'site_ordination.csv')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'species_ordination.csv')))
-        self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'Incubation-16S.csv')))
+        self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'moss-amp.csv')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'mds_script.R')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'saving_mds_plot.bmp')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'saving_mds_plot.pdf')))
+        self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'plotly_fig.html')))
 
     # Uncomment to skip this test
     # @unittest.skip("skipped test_MDSUtilsrun_metaMDS_with_file")

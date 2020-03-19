@@ -18,12 +18,11 @@ RUN pip install pandas==0.23.4 \
     && pip install dotmap \
     && pip install matplotlib \
     && pip install scipy \
-    && pip install jinja2 \
     && pip install plotly==4.5.2
 
 RUN pip install natsort
 
-RUN conda install -yc bioconda biom-format
+# RUN conda install -yc bioconda biom-format
 RUN pip install sklearn \
     && pip install plotly
 
@@ -51,6 +50,10 @@ RUN Rscript -e "install.packages('parmigene')"
 
 # jsonlite: A Robust, High Performance JSON Parser and Generator for R
 RUN Rscript -e "install.packages('jsonlite')"
+
+RUN pip install Cython
+RUN pip install numpy
+RUN pip install biom-format
 
 # -----------------------------------------
 

@@ -464,13 +464,19 @@ class MDSUtils:
         return report_output
 
     def _plot_with_grouping(self):
-
         logging.info('Plotting with grouping: "{}", and "{}"'.format(self.color_marker_by, self.scale_size_by))
 
+        # Both can not be the same right now.. mdf is now new pd would lead to problems
+        if self.color_marker_by == self.scale_size_by:
+            print('ERROR: both color and scale are same field. scale set to None')
+            self.scale_size_by = None
+
+        # KBase obj data
         dfu = DataFileUtil(self.callback_url)
         mdf = dfu.get_objects({'object_refs': [self.attribute_mapping_obj_ref]})
         attr_l = mdf['data'][0]['data']['attributes']
 
+        # Get index location in mdf(metadata) of chosen color and scale
         color_index = None
         size_index = None
         for i in range(len(attr_l)):
@@ -479,6 +485,7 @@ class MDSUtils:
             if attr_l[i]['attribute'] == self.scale_size_by:
                 size_index = i
 
+        # Make list of color and scale data
         color_data = []
         size_data = []
         mdf_indx = mdf['data'][0]['data']['instances'].keys()
@@ -486,23 +493,36 @@ class MDSUtils:
             if color_index is not None:
                 color_data.append(mdf['data'][0]['data']['instances'][sample][color_index])
             if size_index is not None:
-                size_data.append(mdf['data'][0]['data']['instances'][sample][size_index])
+                try:
+                    size_data.append(float(mdf['data'][0]['data']['instances'][sample][size_index]))
+                except:
+                    logging.info('ERROR: scaling is not int or float')
+                    self.scale_size_by = None
+                    size_index = None
 
+        # mdf is now new pd.DataFrame that only includes needed data
         mdf = pd.DataFrame(index=mdf_indx, columns=[self.color_marker_by, self.scale_size_by])
         if color_index is not None:
             mdf[self.color_marker_by] = color_data
         if size_index is not None:
             mdf[self.scale_size_by] = size_data
 
-        site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"))
+        # Get site data from previously saved file
+        site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"), index_col=0)
+        logging.info('SITE_ORDIN_DF:\n {}'.format(site_ordin_df))
 
+        # Fill site_ordin_df with metadata from mdf
         site_ordin_df['color'] = None
         site_ordin_df['size'] = None
         for ID in site_ordin_df.index:
             site_ordin_df['color'].loc[ID] = mdf[self.color_marker_by].loc[ID]
             site_ordin_df['size'].loc[ID] = mdf[self.scale_size_by].loc[ID]
 
-        if self.color_marker_by is not None and self.scale_size_by is not None:
+        site_ordin_df.fillna('na', inplace=True)
+
+        # Plot
+        if self.color_marker_by is not None and self.scale_size_by is not None and all(
+                isinstance(x, (int, float)) for x in list(site_ordin_df['size'])):
             fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="color", size="size",
                              hover_name=site_ordin_df.index)
         elif self.color_marker_by is not None:
@@ -510,6 +530,7 @@ class MDSUtils:
         elif self.scale_size_by is not None:
             fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", size="size", hover_name=site_ordin_df.index)
 
+        # Save plotly_fig.html and return path
         plotly_html_file_path = os.path.join(self.output_dir, "plotly_fig.html")
         plot(fig, filename=plotly_html_file_path)
         return plotly_html_file_path
@@ -528,10 +549,6 @@ class MDSUtils:
         self.output_dir = os.path.join(self.working_dir, self.MDS_OUT_DIR)
         self._mkdir_p(self.output_dir)
 
-        # Variables for Grouping Features
-        self.color_marker_by
-        self.scale_size_by
-        self.attribute_mapping_obj_ref
 
     def run_metaMDS(self, params):
         """
