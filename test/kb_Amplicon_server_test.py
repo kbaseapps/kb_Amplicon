@@ -55,7 +55,7 @@ class kb_AmpliconTest(unittest.TestCase):
 
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
     # Uncomment to skip this test
-    # @unittest.skip("skipped test_run_metaMDS_with_objref")
+    @unittest.skip("skipped test_run_metaMDS_with_objref")
     def test_run_metaMDS_with_objref(self):
         # Prepare test objects in workspace if needed using
         # self.getWsClient().save_objects({'workspace': self.getWsName(),
@@ -91,7 +91,7 @@ class kb_AmpliconTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'saving_mds_plot.pdf')))
 
     # Uncomment to skip this test
-    # @unittest.skip("skipped test_MDSUtilsrun_metaMDS_with_file")
+    @unittest.skip("skipped test_MDSUtilsrun_metaMDS_with_file")
     def test_MDSUtils_run_metaMDS_with_file(self):
         # Prepare test objects in workspace if needed using
         # self.getWsClient().save_objects({'workspace': self.getWsName(),

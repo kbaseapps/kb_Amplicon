@@ -391,9 +391,6 @@ class MDSUtils:
         logging.info('Start generating html report for MDS results...')
         html_report = list()
 
-        if self.color_marker_by is not None or self.scale_size_by is not None:
-            self._plot_with_grouping()
-
         mds_plots = list()
         for root, folders, files in os.walk(mds_outdir):
             # Find the image files by their extensions.
@@ -620,6 +617,10 @@ class MDSUtils:
         mds_params_df = pd.read_json(os.path.join(self.output_dir, "others.json"))
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"))
         species_ordin_df = pd.read_csv(os.path.join(self.output_dir, "species_ordination.csv"))
+
+        # Make and save plotly fig
+        if self.color_marker_by is not None or self.scale_size_by is not None:
+            self._plot_with_grouping()
 
         mds_ref = self._save_mds_matrix(workspace_name, input_obj_ref, mds_matrix_name,
                                         dist_matrix_df, mds_params_df, site_ordin_df,

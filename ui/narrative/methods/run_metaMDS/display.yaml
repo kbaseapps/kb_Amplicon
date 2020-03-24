@@ -1,10 +1,10 @@
 #
 # define display information
 #
-name: run_metaMDS
+name: NMDS
 
 tooltip: |
-    Perform metaMDS analysis on matrix data
+    Perform NMDS analysis on matrix data
 
 screenshots: []
 
@@ -115,5 +115,5 @@ parameter-groups:
         short-hint:  Select an attribute for plot sizing
 
 description : |
-    <p> Perform metaMDS analysis on Matrix object </p>
+    <p> Perform NMDS analysis on Matrix object </p>
 
