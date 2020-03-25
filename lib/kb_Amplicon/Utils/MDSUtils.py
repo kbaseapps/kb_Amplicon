@@ -10,6 +10,10 @@ import re
 import subprocess
 
 import pandas as pd
+import plotly.offline as pyo
+import plotly.graph_objs as go
+import plotly.express as px
+from plotly.offline import plot
 
 from kb_Amplicon.Utils.DataUtil import DataUtil
 from installed_clients.DataFileUtilClient import DataFileUtil
@@ -387,18 +391,18 @@ class MDSUtils:
         logging.info('Start generating html report for MDS results...')
         html_report = list()
 
-        result_dir = os.path.join(self.working_dir, str(uuid.uuid4()))
-        self._mkdir_p(result_dir)
-        result_file_path = os.path.join(result_dir, 'mds_result.html')
-
         mds_plots = list()
         for root, folders, files in os.walk(mds_outdir):
             # Find the image files by their extensions.
             for f in files:
-                if re.match('^[a-zA-Z]+.*.(jpeg|jpg|bmp|png|tiff|pdf|ps)$', f):
+                if re.match('^[a-zA-Z]+.*.(jpeg|jpg|bmp|png|tiff|pdf|ps|html)$', f):
                     absolute_path = os.path.join(root, f)
                     logging.info("Adding file {} to plot archive.".format(absolute_path))
                     mds_plots.append(absolute_path)
+
+        result_dir = os.path.join(self.working_dir, str(uuid.uuid4()))
+        self._mkdir_p(result_dir)
+        result_file_path = os.path.join(result_dir, 'mds_result.html')
 
         visualization_content = ''
 
@@ -408,6 +412,7 @@ class MDSUtils:
             visualization_content += '<iframe height="900px" width="100%" '
             visualization_content += 'src="{}" '.format(os.path.basename(mds_plot))
             visualization_content += 'style="border:none;"></iframe>\n<p></p>\n'
+
 
         with open(result_file_path, 'w') as result_file:
             with open(os.path.join(os.path.dirname(__file__), 'templates', 'mds_template.html'),
@@ -455,6 +460,78 @@ class MDSUtils:
 
         return report_output
 
+    def _plot_with_grouping(self):
+        logging.info('Plotting with grouping: "{}", and "{}"'.format(self.color_marker_by, self.scale_size_by))
+
+        # Both can not be the same right now.. mdf is now new pd would lead to problems
+        if self.color_marker_by == self.scale_size_by:
+            print('ERROR: both color and scale are same field. scale set to None')
+            self.scale_size_by = None
+
+        # KBase obj data
+        dfu = DataFileUtil(self.callback_url)
+        mdf = dfu.get_objects({'object_refs': [self.attribute_mapping_obj_ref]})
+        attr_l = mdf['data'][0]['data']['attributes']
+
+        # Get index location in mdf(metadata) of chosen color and scale
+        color_index = None
+        size_index = None
+        for i in range(len(attr_l)):
+            if attr_l[i]['attribute'] == self.color_marker_by:
+                color_index = i
+            if attr_l[i]['attribute'] == self.scale_size_by:
+                size_index = i
+
+        # Make list of color and scale data
+        color_data = []
+        size_data = []
+        mdf_indx = mdf['data'][0]['data']['instances'].keys()
+        for sample in mdf_indx:
+            if color_index is not None:
+                color_data.append(mdf['data'][0]['data']['instances'][sample][color_index])
+            if size_index is not None:
+                try:
+                    size_data.append(float(mdf['data'][0]['data']['instances'][sample][size_index]))
+                except:
+                    logging.info('ERROR: scaling is not int or float')
+                    self.scale_size_by = None
+                    size_index = None
+
+        # mdf is now new pd.DataFrame that only includes needed data
+        mdf = pd.DataFrame(index=mdf_indx, columns=[self.color_marker_by, self.scale_size_by])
+        if color_index is not None:
+            mdf[self.color_marker_by] = color_data
+        if size_index is not None:
+            mdf[self.scale_size_by] = size_data
+
+        # Get site data from previously saved file
+        site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"), index_col=0)
+        logging.info('SITE_ORDIN_DF:\n {}'.format(site_ordin_df))
+
+        # Fill site_ordin_df with metadata from mdf
+        site_ordin_df['color'] = None
+        site_ordin_df['size'] = None
+        for ID in site_ordin_df.index:
+            site_ordin_df['color'].loc[ID] = mdf[self.color_marker_by].loc[ID]
+            site_ordin_df['size'].loc[ID] = mdf[self.scale_size_by].loc[ID]
+
+        site_ordin_df.fillna('na', inplace=True)
+
+        # Plot
+        if self.color_marker_by is not None and self.scale_size_by is not None and all(
+                isinstance(x, (int, float)) for x in list(site_ordin_df['size'])):
+            fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="color", size="size",
+                             hover_name=site_ordin_df.index)
+        elif self.color_marker_by is not None:
+            fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="color", hover_name=site_ordin_df.index)
+        elif self.scale_size_by is not None:
+            fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", size="size", hover_name=site_ordin_df.index)
+
+        # Save plotly_fig.html and return path
+        plotly_html_file_path = os.path.join(self.output_dir, "plotly_fig.html")
+        plot(fig, filename=plotly_html_file_path)
+        return plotly_html_file_path
+
     def __init__(self, config):
 
         self.ws_url = config["workspace-url"]
@@ -468,6 +545,7 @@ class MDSUtils:
         self.dfu = DataFileUtil(self.callback_url)
         self.output_dir = os.path.join(self.working_dir, self.MDS_OUT_DIR)
         self._mkdir_p(self.output_dir)
+
 
     def run_metaMDS(self, params):
         """
@@ -485,6 +563,15 @@ class MDSUtils:
                      'params:\n{}'.format(json.dumps(params, indent=1)))
 
         self._validate_run_mds_params(params)
+
+        # Variables for Grouping Features
+        self.attribute_mapping_obj_ref = params.get('attribute_mapping_obj_ref')
+        self.color_marker_by = params.get('color_marker_by')
+        if self.color_marker_by is not None:
+            self.color_marker_by = self.color_marker_by['meta_group'][0]
+        self.scale_size_by = params.get('scale_size_by')
+        if self.scale_size_by is not None:
+            self.scale_size_by = self.scale_size_by['meta_group'][0]
 
         input_obj_ref = params.get(self.PARAM_IN_MATRIX)
         workspace_name = params.get(self.PARAM_IN_WS)
@@ -507,6 +594,8 @@ class MDSUtils:
             row_ids = obj_data['data']['row_ids']
             col_ids = obj_data['data']['col_ids']
             matrix_df = pd.DataFrame(matrix_tab, index=row_ids, columns=col_ids)
+            # Transpose DataFrame
+            matrix_df = matrix_df.T
 
             matrix_data_file = os.path.join(self.output_dir, obj_name + '.csv')
             with open(matrix_data_file, 'w') as m_file:
@@ -528,6 +617,10 @@ class MDSUtils:
         mds_params_df = pd.read_json(os.path.join(self.output_dir, "others.json"))
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"))
         species_ordin_df = pd.read_csv(os.path.join(self.output_dir, "species_ordination.csv"))
+
+        # Make and save plotly fig
+        if self.color_marker_by is not None or self.scale_size_by is not None:
+            self._plot_with_grouping()
 
         mds_ref = self._save_mds_matrix(workspace_name, input_obj_ref, mds_matrix_name,
                                         dist_matrix_df, mds_params_df, site_ordin_df,
