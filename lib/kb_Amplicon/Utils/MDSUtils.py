@@ -568,10 +568,10 @@ class MDSUtils:
         self.attribute_mapping_obj_ref = params.get('attribute_mapping_obj_ref')
         self.color_marker_by = params.get('color_marker_by')
         if self.color_marker_by is not None:
-            self.color_marker_by = self.color_marker_by['meta_group'][0]
+            self.color_marker_by = self.color_marker_by['attribute_color'][0]
         self.scale_size_by = params.get('scale_size_by')
         if self.scale_size_by is not None:
-            self.scale_size_by = self.scale_size_by['meta_group'][0]
+            self.scale_size_by = self.scale_size_by['attribute_size'][0]
 
         input_obj_ref = params.get(self.PARAM_IN_MATRIX)
         workspace_name = params.get(self.PARAM_IN_WS)
