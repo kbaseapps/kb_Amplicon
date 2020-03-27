@@ -465,7 +465,7 @@ class MDSUtils:
 
         # Both can not be the same right now.. mdf is now new pd would lead to problems
         if self.color_marker_by == self.scale_size_by:
-            print('ERROR: both color and scale are same field. scale set to None')
+            logging.info('ERROR: both color and scale are same field. scale set to None')
             self.scale_size_by = None
 
         # KBase obj data
@@ -493,7 +493,7 @@ class MDSUtils:
                 try:
                     size_data.append(float(mdf['data'][0]['data']['instances'][sample][size_index]))
                 except:
-                    logging.info('ERROR: scaling is not int or float')
+                    logging.info('ERROR: scaling is not int or float. scaling has been dropped')
                     self.scale_size_by = None
                     size_index = None
 
@@ -507,6 +507,14 @@ class MDSUtils:
         # Get site data from previously saved file
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"), index_col=0)
         logging.info('SITE_ORDIN_DF:\n {}'.format(site_ordin_df))
+
+        # Check if metadata file is valid for this method
+        for sample in site_ordin_df.index:
+            try:
+                mdf.loc[sample]
+            except KeyError:
+                raise KeyError('One or more samples in site_ordination is not found in chosen metadata file. '
+                               'Pick an appropriate metadata file')
 
         # Fill site_ordin_df with metadata from mdf
         site_ordin_df['color'] = None
@@ -568,10 +576,18 @@ class MDSUtils:
         self.attribute_mapping_obj_ref = params.get('attribute_mapping_obj_ref')
         self.color_marker_by = params.get('color_marker_by')
         if self.color_marker_by is not None:
-            self.color_marker_by = self.color_marker_by['meta_group'][0]
+            try:
+                self.color_marker_by = self.color_marker_by['attribute_color'][0]
+            except KeyError:
+                raise KeyError('Expected dictionary with key "attribute_color" containing a list of one element. '
+                               'Instead found: {}'.format(self.color_marker_by))
         self.scale_size_by = params.get('scale_size_by')
         if self.scale_size_by is not None:
-            self.scale_size_by = self.scale_size_by['meta_group'][0]
+            try:
+                self.scale_size_by = self.scale_size_by['attribute_size'][0]
+            except KeyError:
+                raise KeyError('Expected dictionary with key "attribute_size" containing a list of one element. '
+                               'Instead found: {}'.format(self.scale_size_by))
 
         input_obj_ref = params.get(self.PARAM_IN_MATRIX)
         workspace_name = params.get(self.PARAM_IN_WS)

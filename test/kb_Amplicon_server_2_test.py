@@ -77,10 +77,10 @@ class kb_AmpliconTest(unittest.TestCase):
              'plot_name': '',
              'attribute_mapping_obj_ref': '37967/4/1',
              'scale_size_by': {
-                            'meta_group': ['Coordinate Precision?']
+                            'attribute_size': ['Coordinate Precision?']
                             },
              'color_marker_by': {
-                            'meta_group': ['Field name (informal classification)']
+                            'attribute_color': ['Field name (informal classification)']
                             },
              'mds_matrix_name': 'output_mds_from_obj'})
 
