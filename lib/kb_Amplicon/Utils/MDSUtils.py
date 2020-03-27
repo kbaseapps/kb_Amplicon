@@ -513,7 +513,7 @@ class MDSUtils:
             try:
                 mdf.loc[sample]
             except KeyError:
-                raise KeyError('One or more samples in site_ordination do not match those in chosen metadata file. '
+                raise KeyError('One or more samples in site_ordination is not found in chosen metadata file. '
                                'Pick an appropriate metadata file')
 
         # Fill site_ordin_df with metadata from mdf
@@ -579,15 +579,15 @@ class MDSUtils:
             try:
                 self.color_marker_by = self.color_marker_by['attribute_color'][0]
             except KeyError:
-                raise KeyError('Trying to access dictionary key "attribute_color". Instead  found: "'
-                               + str(list(self.color_marker_by.keys())[0])) + '"'
+                raise KeyError('Expected dictionary with key "attribute_color" containing a list of one element. '
+                               'Instead found: {}'.format(self.color_marker_by))
         self.scale_size_by = params.get('scale_size_by')
         if self.scale_size_by is not None:
             try:
                 self.scale_size_by = self.scale_size_by['attribute_size'][0]
             except KeyError:
-                raise KeyError('Trying to access dictionary key "attribute_size". Instead  found: "'
-                               + str(list(self.scale_size_by.keys())[0])) + '"'
+                raise KeyError('Expected dictionary with key "attribute_size" containing a list of one element. '
+                               'Instead found: {}'.format(self.scale_size_by))
 
         input_obj_ref = params.get(self.PARAM_IN_MATRIX)
         workspace_name = params.get(self.PARAM_IN_WS)
