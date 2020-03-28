@@ -129,6 +129,7 @@ class MDSUtils:
         mds_scrpt += 'write_json(toJSON(df),path="others.json",pretty=TRUE,auto_unbox=FALSE)\n'
 
         # save mds plots
+        '''
         mds_scrpt += 'bmp(file="saving_mds_plot.bmp",width=580,height=580,units="px",' + \
                      'res=100, pointsize=12)\n'
         mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
@@ -148,6 +149,7 @@ class MDSUtils:
         mds_scrpt += 'points(fig,"species",pch=21,col="green",bg="blue")\n'
         # mds_scrpt += 'text(fig, "species", col="blue", cex=0.9)\n'
         mds_scrpt += 'dev.off()\n'
+        '''
         # If there is user input plotting script:
         plt_scrpt = params.get('plot_script', '').lower()
         if plt_scrpt and re.match("^plot\(\s*[a-zA-Z]+.*\)$", plt_scrpt):
@@ -395,7 +397,7 @@ class MDSUtils:
         for root, folders, files in os.walk(mds_outdir):
             # Find the image files by their extensions.
             for f in files:
-                if re.match('^[a-zA-Z]+.*.(jpeg|jpg|bmp|png|tiff|pdf|ps|html)$', f):
+                if re.match('^[a-zA-Z]+.*.(html)$', f):  # jpeg|jpg|bmp|png|tiff|pdf|ps|
                     absolute_path = os.path.join(root, f)
                     logging.info("Adding file {} to plot archive.".format(absolute_path))
                     mds_plots.append(absolute_path)
@@ -460,17 +462,16 @@ class MDSUtils:
 
         return report_output
 
-    def _plot_with_grouping(self):
-        logging.info('Plotting with grouping: "{}", and "{}"'.format(self.color_marker_by, self.scale_size_by))
+    def _get_metadata_from_obj(self):
+        """
+        Get metadata from obj and return simplified pd.DataFrame
+        :return:
+        """
 
-        # Both can not be the same right now.. mdf is now new pd would lead to problems
-        if self.color_marker_by == self.scale_size_by:
-            logging.info('ERROR: both color and scale are same field. scale set to None')
-            self.scale_size_by = None
+        logging.info('Retrieving metadata..')
 
         # KBase obj data
-        dfu = DataFileUtil(self.callback_url)
-        mdf = dfu.get_objects({'object_refs': [self.attribute_mapping_obj_ref]})
+        mdf = self.dfu.get_objects({'object_refs': [self.attribute_mapping_obj_ref]})
         attr_l = mdf['data'][0]['data']['attributes']
 
         # Get index location in mdf(metadata) of chosen color and scale
@@ -504,6 +505,39 @@ class MDSUtils:
         if size_index is not None:
             mdf[self.scale_size_by] = size_data
 
+        return mdf
+
+    def _get_metadata_from_file(self):
+        """
+        Get metadata from file and return simplified pd.DataFrame
+        :return:
+        """
+
+        logging.info('Retrieving metadata..')
+
+        mdf = pd.read_csv(self.metadata_file, sep='\t', index_col=0)
+
+        logging.info('MDF: {}'.format(mdf))
+
+        mdf = mdf[[self.color_marker_by, self.scale_size_by]]
+
+        return mdf
+
+    def _plot_with_grouping(self):
+        logging.info('Plotting with grouping: "{}", and "{}"'.format(self.color_marker_by, self.scale_size_by))
+
+        # Both can not be the same right now.. mdf is now new pd would lead to problems
+        if self.color_marker_by == self.scale_size_by:
+            logging.info('ERROR: both color and scale are same field. scale set to None')
+            self.scale_size_by = None
+
+        if self.attribute_mapping_obj_ref is not None:
+            mdf = self._get_metadata_from_obj()
+        elif self.metadata_file is not None:
+            mdf = self._get_metadata_from_file()
+        else:
+            FileNotFoundError('No metadata file was specified')
+
         # Get site data from previously saved file
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"), index_col=0)
         logging.info('SITE_ORDIN_DF:\n {}'.format(site_ordin_df))
@@ -513,8 +547,9 @@ class MDSUtils:
             try:
                 mdf.loc[sample]
             except KeyError:
-                raise KeyError('One or more samples in site_ordination is not found in chosen metadata file. '
-                               'Pick an appropriate metadata file')
+                raise KeyError('One or more samples in site_ordination is not found in chosen metadata obj. If you ran '
+                               'this using files, you might need to transpose the data in your files so samples are '
+                               'rows and OTU are columns.')
 
         # Fill site_ordin_df with metadata from mdf
         site_ordin_df['color'] = None
@@ -554,6 +589,9 @@ class MDSUtils:
         self.output_dir = os.path.join(self.working_dir, self.MDS_OUT_DIR)
         self._mkdir_p(self.output_dir)
 
+        # If input is from files, then pd.DataFrame needs to be transposed in run_metaMDS_with_file method
+        self.need_to_transpose = True
+
 
     def run_metaMDS(self, params):
         """
@@ -571,23 +609,6 @@ class MDSUtils:
                      'params:\n{}'.format(json.dumps(params, indent=1)))
 
         self._validate_run_mds_params(params)
-
-        # Variables for Grouping Features
-        self.attribute_mapping_obj_ref = params.get('attribute_mapping_obj_ref')
-        self.color_marker_by = params.get('color_marker_by')
-        if self.color_marker_by is not None:
-            try:
-                self.color_marker_by = self.color_marker_by['attribute_color'][0]
-            except KeyError:
-                raise KeyError('Expected dictionary with key "attribute_color" containing a list of one element. '
-                               'Instead found: {}'.format(self.color_marker_by))
-        self.scale_size_by = params.get('scale_size_by')
-        if self.scale_size_by is not None:
-            try:
-                self.scale_size_by = self.scale_size_by['attribute_size'][0]
-            except KeyError:
-                raise KeyError('Expected dictionary with key "attribute_size" containing a list of one element. '
-                               'Instead found: {}'.format(self.scale_size_by))
 
         input_obj_ref = params.get(self.PARAM_IN_MATRIX)
         workspace_name = params.get(self.PARAM_IN_WS)
@@ -612,6 +633,7 @@ class MDSUtils:
             matrix_df = pd.DataFrame(matrix_tab, index=row_ids, columns=col_ids)
             # Transpose DataFrame
             matrix_df = matrix_df.T
+            self.need_to_transpose = False
 
             matrix_data_file = os.path.join(self.output_dir, obj_name + '.csv')
             with open(matrix_data_file, 'w') as m_file:
@@ -622,7 +644,7 @@ class MDSUtils:
         else:
             err_msg = 'Ooops! [{}] is not supported.\n'.format(obj_type)
             err_msg += 'Please provide a KBaseMatrices object'
-            raise ValueError("err_msg")
+            raise ValueError(err_msg)
 
         if exitCode == -99:
             raise ValueError('Caught subprocess.CalledProcessError while calling R.')
@@ -633,10 +655,6 @@ class MDSUtils:
         mds_params_df = pd.read_json(os.path.join(self.output_dir, "others.json"))
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"))
         species_ordin_df = pd.read_csv(os.path.join(self.output_dir, "species_ordination.csv"))
-
-        # Make and save plotly fig
-        if self.color_marker_by is not None or self.scale_size_by is not None:
-            self._plot_with_grouping()
 
         mds_ref = self._save_mds_matrix(workspace_name, input_obj_ref, mds_matrix_name,
                                         dist_matrix_df, mds_params_df, site_ordin_df,
@@ -662,13 +680,37 @@ class MDSUtils:
         :param distance_metric: distance the ordination will be performed on, default to "bray"
         """
 
+        # Variables for Grouping Features
+        self.attribute_mapping_obj_ref = params.get('attribute_mapping_obj_ref')
+        self.metadata_file = params.get('metadata_file')
+        self.color_marker_by = params.get('color_marker_by')
+        if self.color_marker_by is not None:
+            try:
+                self.color_marker_by = self.color_marker_by['attribute_color'][0]
+            except KeyError:
+                raise KeyError('Expected dictionary with key "attribute_color" containing a list of one element. '
+                               'Instead found: {}'.format(self.color_marker_by))
+        self.scale_size_by = params.get('scale_size_by')
+        if self.scale_size_by is not None:
+            try:
+                self.scale_size_by = self.scale_size_by['attribute_size'][0]
+            except KeyError:
+                raise KeyError('Expected dictionary with key "attribute_size" containing a list of one element. '
+                               'Instead found: {}'.format(self.scale_size_by))
+
         logging.info('--->\nrunning metaMDS with input \n' +
                      'params:\n{}'.format(json.dumps(params, indent=1)))
 
         rscrpt_file = self._build_rMDS_script(params)
         logging.info('--->\nR script file has been written to {}'.format(rscrpt_file))
 
-        return self._execute_r_script(rscrpt_file)
+        result = self._execute_r_script(rscrpt_file)
+
+        # Make and save plotly fig
+        if self.color_marker_by is not None or self.scale_size_by is not None:
+            self._plot_with_grouping()
+
+        return result
 
     def export_mds_matrix_excel(self, params):
         """
