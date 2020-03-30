@@ -70,7 +70,7 @@ class kb_AmpliconTest(unittest.TestCase):
             self.ctx,
             {'workspace_name': self.wsName,
              'input_obj_ref': '37967/3/2',
-             'n_components': 2,
+             'n_components': 3,
              'max_iter': 20,
              'plot_script': 'plot(my_data.mds,type="t",display="sites")',
              'plot_type': 'ps',
@@ -94,8 +94,6 @@ class kb_AmpliconTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'species_ordination.csv')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'moss-amp.csv')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'mds_script.R')))
-        self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'saving_mds_plot.bmp')))
-        self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'saving_mds_plot.pdf')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'plotly_fig.html')))
 
     # Uncomment to skip this test
@@ -114,9 +112,16 @@ class kb_AmpliconTest(unittest.TestCase):
 
         ret = mds_util.run_metaMDS_with_file({
             'workspace_name': self.wsName,
-            'datafile': 'smpl_16s.csv',
+            'datafile': 'smallset (copy).csv',
+            'metadata_file': 'metadata.csv',
             'n_components': 3,
             'max_iter': 20,
+            'scale_size_by': {
+                'attribute_size': ['Coordinate Precision?']
+            },
+            'color_marker_by': {
+                'attribute_color': ['Field name (informal classification)']
+            },
             'mds_matrix_name': 'output_mds_from_file'})
         self.assertEqual(ret, 0)
         mds_dir = '/kb/module/work/tmp/mds_output'
@@ -124,7 +129,6 @@ class kb_AmpliconTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'others.json')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'site_ordination.csv')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'species_ordination.csv')))
-        self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'smpl_16s.csv')))
+        self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'smallset (copy).csv')))
         self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'mds_script.R')))
-        self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'saving_mds_plot.bmp')))
-        self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'saving_mds_plot.pdf')))
+        self.assertTrue(os.path.isfile(os.path.join(mds_dir, 'plotly_fig.html')))
