@@ -116,6 +116,8 @@ parameter-groups:
 
 description : |
     <p> Perform Non-metric Multidimensional Scaling Analysis on Matrix object. </p>
-    <p> Creates a scatter plot for the sample's data. Plots are colored and scaled by specified grouping criteria. </p>
+    <p> Creates an ordination plot for the sample's data. Plots are colored and scaled by specified grouping criteria. </p>
     <p> NMDS is a way of taking multidimensional data and visualizing it in fewer dimensions. This app visualizes it in two dimensions.</p>
+    <p> RDocumentation Summary: "Function metaMDS performs Nonmetric Multidimensional Scaling (NMDS), and tries to find a stable solution using several random starts. In addition, it standardizes the scaling in the result, so that the configurations are easier to interpret, and adds species scores to the site ordination. The metaMDS function does not provide actual NMDS, but it calls another function for the purpose. Currently monoMDS is the default choice, and it is also possible to call the isoMDS (MASS package)." From: https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/metaMDS</p>
+    <p> Additional information on the function used in this app can be found at the link above.</p>
 
