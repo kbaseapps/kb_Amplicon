@@ -115,9 +115,103 @@ parameter-groups:
         short-hint:  Select an attribute for plot sizing
 
 description : |
-    <p> Perform Non-metric Multidimensional Scaling Analysis on Matrix object. </p>
-    <p> Creates an ordination plot for the sample's data. Plots are colored and scaled by specified grouping criteria. </p>
-    <p> NMDS is a way of taking multidimensional data and visualizing it in fewer dimensions. This app visualizes it in two dimensions.</p>
-    <p> RDocumentation Summary: "Function metaMDS performs Nonmetric Multidimensional Scaling (NMDS), and tries to find a stable solution using several random starts. In addition, it standardizes the scaling in the result, so that the configurations are easier to interpret, and adds species scores to the site ordination. The metaMDS function does not provide actual NMDS, but it calls another function for the purpose. Currently monoMDS is the default choice, and it is also possible to call the isoMDS (MASS package)." From: https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/metaMDS</p>
-    <p> Additional information on the function used in this app can be found at the link above.</p>
+    <h3>Description:</h3>
 
+    <p>This app performs non-metric multidimensional scaling analysis, NMDS, on an AmpliconMatrix object. NMDS is a way
+    of taking multidimensional data and visualizing it in fewer dimensions. This app visualizes it in two dimensions by
+    creating an ordination plot for the sample's data. Plots are colored and scaled by specified grouping criteria. This
+    allows the user to better see differences and similarities among a number of samples.</p>
+
+    <p>This app uses the R vegan package’s function ‘metaMDS’ to perform Nonmetric Multidimensional Scaling. metaMDS was
+    written by Peter Minchin. There are six steps when performing NMDS:</p>
+
+    <p><b>Steps:</b></p>
+
+    <p>1.  	Transformation: depending on data values, two different transformations can occur—Wisconsin double
+    standardization if data values are larger than common abundance class scales, and sqrt transformation if values are
+    much larger. The transformation is intended for community data.</p>
+
+    <p>2.  	Choice of dissimilarity: Dissimilarity indices that have a good rank order relation to ordering sites along
+    gradients is used to provide good results. This app uses Bray-Curtis dissimilarity, which is often the test-case
+    winner for microbial community datasets.</p>
+
+    <p>3.  	NMDS with random starts: NMDS can sometimes get stuck in a local optima that is not the best solution. To
+    address this problem, the metaMDS function starts NMDS from several random starts. If a better solution is found,
+    meaning a solution with less stress, it becomes the new standard. NMDS has ‘try’ and ‘maxtry’ for minimum and maximum
+    numbers of random starts in search of stable solution. After try has been reached, the iteration will stop when two
+    convergent solutions were found or trymax was reached. Try is set to 20. Trymax is default at 300 but this can be
+    changed in input “Maximum Number of Iterations”.</p>
+
+    <p>4.  	Scaling of the results: The ordination results are re-centered such that the new origin is the average of
+    the axes. The plot is then rotated so that variance of points is maximized along the first axis, similar to Principal
+    Components Analysis. Finally, half-change scaling is applied which converts axis units to be equal to halving of
+    community similarity. For more details on these scalings, see the
+    <a href="https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/metaMDS">metaMDS documentation</a>. </p>
+
+    <p><b>Inputs:</b></p>
+
+    <p>1)     <u>Matrix Object:</u> AmpliconMatrix that NMDS analysis will be performed on.</p>
+
+    <p>2)     <u>AttributeMapping Object:</u> Object that contains metadata for the ‘Group Marker By’ and ‘Scale Marker
+    Size By’ criteria.</p>
+
+    <p>3)     <u>Perform MDS On:</u> This parameter has not yet currently been implemented but its future purpose is to
+    allow MDS analysis on the column as principle axis case. Currently only row is implemented.</p>
+
+    <p>4)     <u>Number of Component:</u> The number of dimensions for NMDS analysis space. Note that plotting will only
+    consider the first two, although the files created will reflect the specified number. The default is 2.</p>
+
+    <p>5)     <u>Maximum Number of Iterations:</u> the max number of iterations to be performed during NMDS analysis.
+    The default is 300.</p>
+
+    <p>6)     <u>Group Marker By:</u> This provides coloring for the sample plots. Plots are given different colors
+    depending on the metadata for the samples. This makes it easier to see which plots share similarities.</p>
+
+    <p>7)     <u>Scale Marker Size By:</u> Adjusts the sizes of the plots based on specified metadata. The data must be
+    a number—int or float.</p>
+
+    <p>8)     <u>MDS Matrix Object Name:</u> Name of the PCAMatrix Object that will be created.</p>
+
+    <p><b>Advanced Inputs:</b></p>
+
+    <p>9)     <u>Script for plotting results:</u> If user chooses to input their own plotting script.</p>
+
+    <p>10)     <u>Plot type:</u>Further specifications for user input plotting script to specify type.</p>
+
+    <p>11)     <u>Plot file name:</u> Specify plot name for the user plotting script.</p>
+
+    <p><b>Plotting:</b></p>
+
+    <p>Plotting is done by loading the site_ordination.csv file that is created by the R script and using the first two
+    columns for the plots. If the user specifies number of components greater than two, the app still only uses the first
+    two columns but the site_ordination.csv file will contain more columns. The rows correlate to the samples and columns
+    to MDS.</p>
+
+    <p><b>Output Object:</b></p>
+
+    <p>1.   PCAMatrix</p>
+
+    <p><b>Output Files:</b></p>
+
+    <p>1.  	dist_matrix.csv
+    <br>2.  	dist_matrix.json
+    <br>3.  	mds_script.R
+    <br>4.  	[AmpliconMatrix].csv
+    <br>5.  	others.json
+    <br>6.  	plotly_fig.html
+    <br>7.  	Rplots.pdf
+    <br>8.  	site_ordination.csv
+    <br>9.  	site_ordination.json
+    <br>10.   	species_ordination.csv
+    <br>11.   	species_ordination.json</p>
+
+    <p><b>Tools:</b></p>
+
+    <p>R version 3.6.3
+    <br>Vegan version 2.5-6</p>
+
+    <p><b>Citations:</b></p>
+
+    <p>Minchin, P.R. (1987) An evaluation of relative robustness of techniques for ecological ordinations. Vegetatio 69, 89--107.
+    <br>Vegan Package: https://CRAN.R-project.org/package=vegan
+    <br>R Documentation for metaMDS: https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/metaMDS</p>
