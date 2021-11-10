@@ -178,8 +178,10 @@ class kb_AmpliconTest(unittest.TestCase):
                                        'instance_3': 'instance_3',
                                        'instance_4': 'instance_4'},
                        'col_normalization': 'test_col_normalization',
-                       'data': {'col_ids': ['instance_1', 'instance_2', 'instance_3', 'instance_4'],
-                                'row_ids': ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1', 'WRI_RS00025_CDS_1'],
+                       'data': {'col_ids': ['instance_1', 'instance_2', 'instance_3',
+                                            'instance_4'],
+                                'row_ids': ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1',
+                                            'WRI_RS00025_CDS_1'],
                                 'values': [[0.1, 0.2, 0.3, 0.4],
                                            [0.5, 0.6, 0.7, 0.8],
                                            [0.9, 1, 1.1, 1.2]]},
@@ -216,8 +218,10 @@ class kb_AmpliconTest(unittest.TestCase):
                                        'instance_3': 'instance_3',
                                        'instance_4': 'instance_4'},
                        'col_normalization': 'test_col_normalization',
-                       'data': {'col_ids': ['instance_1', 'instance_2', 'instance_3', 'instance_4'],
-                                'row_ids': ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1', 'WRI_RS00025_CDS_1'],
+                       'data': {'col_ids': ['instance_1', 'instance_2', 'instance_3',
+                                            'instance_4'],
+                                'row_ids': ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1',
+                                            'WRI_RS00025_CDS_1'],
                                 'values': [[0.1, 0.2, 0.3, 0.4],
                                            [0.5, 0.6, 0.7, 0.8],
                                            [0.9, 1, 1.1, 1.2]]},
@@ -296,23 +300,24 @@ class kb_AmpliconTest(unittest.TestCase):
 
         pca_matrix_ref = ret.get('mds_ref')
 
-        pca_matrix_data = self.dfu.get_objects(
+        pca_data = self.dfu.get_objects(
                     {"object_refs": [pca_matrix_ref]})['data'][0]['data']
 
-        self.assertTrue('distance_matrix' in pca_matrix_data)
-        self.assertTrue('mds_parameters' in pca_matrix_data)
-        self.assertTrue('original_matrix_ref' in pca_matrix_data)
-        self.assertTrue('distance_matrix' in pca_matrix_data)
-        self.assertTrue('rotation_matrix' in pca_matrix_data)
-        self.assertTrue('site_ordination' in pca_matrix_data)
-        self.assertTrue('species_ordination' in pca_matrix_data)
+        self.assertTrue('distance_matrix' in pca_data)
+        self.assertTrue('mds_parameters' in pca_data)
+        self.assertTrue('original_matrix_ref' in pca_data)
+        self.assertTrue('distance_matrix' in pca_data)
+        self.assertTrue('rotation_matrix' in pca_data)
+        self.assertTrue('site_ordination' in pca_data)
+        self.assertTrue('species_ordination' in pca_data)
 
         expected_row_ids = ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1', 'WRI_RS00025_CDS_1']
         expected_col_ids = ['instance_1', 'instance_2', 'instance_3', 'instance_4']
-        self.assertCountEqual([value[0] for value in pca_matrix_data.get(
-            'species_ordination').get('values')], expected_row_ids)
-        self.assertCountEqual([value[0] for value in  pca_matrix_data.get(
-            'site_ordination').get('values')], expected_col_ids)
+
+        result_row_ids =[value[0] for value in pca_data.get('species_ordination').get('values')]
+        result_col_ids = [value[0] for value in  pca_data.get('site_ordination').get('values')]
+        self.assertCountEqual(result_row_ids, expected_row_ids)
+        self.assertCountEqual(result_col_ids, expected_col_ids)
 
         mds_dir = '/kb/module/work/tmp/mds_output'
         expected_files = ['dist_matrix.csv', 'dist_matrix.json', 'mds_script.R',
