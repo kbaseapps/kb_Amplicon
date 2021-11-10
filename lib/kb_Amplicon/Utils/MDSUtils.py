@@ -421,7 +421,7 @@ class MDSUtils:
             if self.scale_size_by is not None:
                 if self.associated_matrix_obj_ref is not None:
                     matrix_data = self.dfu.get_objects({
-                        'object_refs': [input_obj_ref]})['data'][0]['data']['data']
+                        'object_refs': [self.associated_matrix_obj_ref]})['data'][0]['data']['data']
 
                     size_data = list()
                     if self.dimension == 'col':
@@ -453,8 +453,9 @@ class MDSUtils:
                     for sample in mdf_indx:
                         try:
                             size_data.append(
-                                float(attr_obj['data'][0]['data']['instances'][sample][size_index]))
-                        except:
+                                float(
+                                    attr_obj['data'][0]['data']['instances'][sample][size_index]))
+                        except Exception:
                             logging.info(
                                 'ERROR: scaling is not int or float. scaling has been dropped')
                             self.scale_size_by = None
@@ -466,7 +467,7 @@ class MDSUtils:
         else:
             if self.associated_matrix_obj_ref is not None:
                 matrix_data = self.dfu.get_objects({
-                    'object_refs': [input_obj_ref]})['data'][0]['data']['data']
+                    'object_refs': [self.associated_matrix_obj_ref]})['data'][0]['data']['data']
                 if self.dimension == 'col':
                     size_index = matrix_data['row_ids'].index(self.scale_size_by)
                     size_data = matrix_data['values'][size_index]
@@ -500,7 +501,7 @@ class MDSUtils:
                     try:
                         size_data.append(float(
                             attr_obj['data'][0]['data']['instances'][sample][size_index]))
-                    except:
+                    except Exception:
                         err_msg = 'ERROR: scaling is not int or float. scaling has been dropped'
                         logging.info(err_msg)
                         self.scale_size_by = None
