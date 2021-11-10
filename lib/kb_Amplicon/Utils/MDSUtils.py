@@ -15,7 +15,6 @@ import plotly.graph_objs as go
 import plotly.express as px
 from plotly.offline import plot
 
-from kb_Amplicon.Utils.DataUtil import DataUtil
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.KBaseReportClient import KBaseReport
 
@@ -581,10 +580,7 @@ class MDSUtils:
         self.callback_url = config['SDK_CALLBACK_URL']
         self.token = config['KB_AUTH_TOKEN']
         self.scratch = config['scratch']
-        self.dfu = DataFileUtil(self.callback_url, service_ver='release')
         self.working_dir = self.scratch
-
-        self.data_util = DataUtil(config)
         self.dfu = DataFileUtil(self.callback_url)
         self.output_dir = os.path.join(self.working_dir, self.MDS_OUT_DIR)
         self._mkdir_p(self.output_dir)
