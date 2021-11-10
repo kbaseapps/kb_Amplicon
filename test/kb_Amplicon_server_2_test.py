@@ -314,8 +314,8 @@ class kb_AmpliconTest(unittest.TestCase):
         expected_row_ids = ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1', 'WRI_RS00025_CDS_1']
         expected_col_ids = ['instance_1', 'instance_2', 'instance_3', 'instance_4']
 
-        result_row_ids =[value[0] for value in pca_data.get('species_ordination').get('values')]
-        result_col_ids = [value[0] for value in  pca_data.get('site_ordination').get('values')]
+        result_row_ids = [value[0] for value in pca_data.get('species_ordination').get('values')]
+        result_col_ids = [value[0] for value in pca_data.get('site_ordination').get('values')]
         self.assertCountEqual(result_row_ids, expected_row_ids)
         self.assertCountEqual(result_col_ids, expected_col_ids)
 
