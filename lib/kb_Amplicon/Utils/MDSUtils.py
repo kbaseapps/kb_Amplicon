@@ -226,6 +226,8 @@ class MDSUtils:
             exitCode = -99
             logging.info('Caught subprocess.CalledProcessError {}'.format(sub_e))
 
+        logging.info('created files in {}:\n{}'.format(result_dir, os.listdir(result_dir)))
+
         return exitCode
 
     def _df_to_list(self, df):
@@ -241,75 +243,6 @@ class MDSUtils:
                        'values': df.values.tolist()}
 
         return matrix_data
-
-    def _mds_df_to_excel(self, mds_df, distance_df, result_dir, mds_matrix_ref):
-        """
-        write MDS matrix df into excel
-        """
-        logging.info('writting mds data frame to excel file')
-        mds_matrix_obj = self.dfu.get_objects({'object_refs': [mds_matrix_ref]})['data'][0]
-        mds_matrix_info = mds_matrix_obj['info']
-        mds_matrix_name = mds_matrix_info[1]
-
-        file_path = os.path.join(result_dir, mds_matrix_name + ".xlsx")
-        writer = pd.ExcelWriter(file_path)
-
-        mds_df.to_excel(writer, "mds_matrix", index=True)
-        if distance_df:
-            distance_df.to_excel(writer, "mds_distance_matrix", index=True)
-
-        writer.close()
-
-    def _Matrix2D_to_df(self, Matrix2D):
-        """
-        _Matrix2D_to_df: transform a FloatMatrix2D to data frame
-        """
-
-        index = Matrix2D.get('row_ids')
-        columns = Matrix2D.get('col_ids')
-        values = Matrix2D.get('values')
-
-        df = pd.DataFrame(values, index=index, columns=columns)
-
-        return df
-
-    def _mds_to_df(self, mds_matrix_ref):
-        """
-        retrieve MDS matrix ws object to mds_df
-        """
-        logging.info('converting mds matrix to data frame')
-        mds_data = self.dfu.get_objects({'object_refs': [mds_matrix_ref]})['data'][0]['data']
-
-        rotation_matrix_data = mds_data.get('rotation_matrix')
-        distance_matrix_data = mds_data.get('distance_matrix')
-        original_matrix_ref = mds_data.get('original_matrix_ref')
-        dimension = mds_data.get('mds_parameters').get('n_components')
-
-        mds_df = self._Matrix2D_to_df(rotation_matrix_data)
-        distance_df = None
-        if distance_matrix_data:
-            distance_df = self._Matrix2D_to_df(distance_matrix_data)
-
-        if original_matrix_ref:
-            logging.info('appending instance group information to mds data frame')
-            obj_data = self.dfu.get_objects(
-                {'object_refs': [original_matrix_ref]})['data'][0]['data']
-
-            attributemapping_ref = obj_data.get('{}_attributemapping_ref'.format(dimension))
-
-            am_data = self.dfu.get_objects(
-                {'object_refs': [attributemapping_ref]})['data'][0]['data']
-
-            attributes = am_data.get('attributes')
-            instances = am_data.get('instances')
-            am_df = pd.DataFrame(data=list(instances.values()),
-                                 columns=list(map(lambda x: x.get('attribute'), attributes)),
-                                 index=instances.keys())
-
-            mds_df = mds_df.merge(am_df, left_index=True, right_index=True, how='left',
-                                  validate='one_to_one')
-
-        return mds_df, distance_df
 
     def _save_mds_matrix(self, workspace_name, input_obj_ref, mds_matrix_name,
                          distance_df, mds_params_df, site_ordin_df, species_ordin_df):
@@ -585,10 +518,6 @@ class MDSUtils:
         self.output_dir = os.path.join(self.working_dir, self.MDS_OUT_DIR)
         self._mkdir_p(self.output_dir)
 
-        # If input is from files, then pd.DataFrame needs to be transposed in run_metaMDS_with_file method
-        self.need_to_transpose = True
-
-
     def run_metaMDS(self, params):
         """
         run_metaMDS: perform metaMDS analysis on matrix
@@ -610,6 +539,7 @@ class MDSUtils:
         workspace_name = params.get(self.PARAM_IN_WS)
         mds_matrix_name = params.get(self.PARAM_OUT_MATRIX)
         n_components = int(params.get('n_components', 2))
+        dimension = params.get('dimension', 'col')
 
         res = self.dfu.get_objects({'object_refs': [input_obj_ref]})['data'][0]
         obj_data = res['data']
@@ -628,8 +558,13 @@ class MDSUtils:
             col_ids = obj_data['data']['col_ids']
             matrix_df = pd.DataFrame(matrix_tab, index=row_ids, columns=col_ids)
             # Transpose DataFrame
-            matrix_df = matrix_df.T
-            self.need_to_transpose = False
+            if dimension == 'col':
+                matrix_df = matrix_df.T
+            elif dimension != 'row':
+                err_msg = 'Input dimension [{}] is not available.\n'.format(dimension)
+                err_msg += 'Please choose either "col" or "row"'
+                raise ValueError(err_msg)
+            logging.info('input matrix:\n {}'.format(matrix_df))
 
             matrix_data_file = os.path.join(self.output_dir, obj_name + '.csv')
             with open(matrix_data_file, 'w') as m_file:
@@ -677,6 +612,10 @@ class MDSUtils:
         """
 
         # Variables for Grouping Features
+
+        logging.info('--->\nrunning run_metaMDS_with_file with input\n' +
+                     'params:\n{}'.format(json.dumps(params, indent=1)))
+
         self.attribute_mapping_obj_ref = params.get('attribute_mapping_obj_ref')
         self.metadata_file = params.get('metadata_file')
         self.color_marker_by = params.get('color_marker_by')
@@ -694,9 +633,6 @@ class MDSUtils:
                 raise KeyError('Expected dictionary with key "attribute_size" containing a list of one element. '
                                'Instead found: {}'.format(self.scale_size_by))
 
-        logging.info('--->\nrunning metaMDS with input \n' +
-                     'params:\n{}'.format(json.dumps(params, indent=1)))
-
         rscrpt_file = self._build_rMDS_script(params)
         logging.info('--->\nR script file has been written to {}'.format(rscrpt_file))
 
@@ -707,24 +643,3 @@ class MDSUtils:
             self._plot_with_grouping()
 
         return result
-
-    def export_mds_matrix_excel(self, params):
-        """
-        export MDSMatrix as Excel
-        """
-        logging.info('start exporting mds matrix')
-        mds_matrix_ref = params.get('input_ref')
-
-        mds_df, components_df = self._mds_to_df(mds_matrix_ref)
-
-        result_dir = os.path.join(self.scratch, str(uuid.uuid4()))
-        self._mkdir_p(result_dir)
-
-        self._mds_df_to_excel(mds_df, components_df, result_dir, mds_matrix_ref)
-
-        package_details = self.dfu.package_for_download({
-            'file_path': result_dir,
-            'ws_refs': [mds_matrix_ref]
-        })
-
-        return {'shock_id': package_details['shock_id']}

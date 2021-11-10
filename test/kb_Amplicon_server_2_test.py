@@ -153,7 +153,9 @@ class kb_AmpliconTest(unittest.TestCase):
                                          'unit_ont_id': 'UO_0000275'}],
                          'instances': {'WRI_RS00010_CDS_1': ['1', '4', '7'],
                                        'WRI_RS00015_CDS_1': ['3', '4', '8'],
-                                       'WRI_RS00025_CDS_1': ['3', '6', '7']},
+                                       'WRI_RS00025_CDS_1': ['3', '6', '7'],
+                                       'WRI_RS00030_CDS_1': ['3', '6', '7'],
+                                       'WRI_RS00035_CDS_1': ['3', '6', '7']},
                          'ontology_mapping_method': 'User Curation'}
 
         info = self.dfu.save_objects({
@@ -181,15 +183,20 @@ class kb_AmpliconTest(unittest.TestCase):
                        'data': {'col_ids': ['instance_1', 'instance_2', 'instance_3',
                                             'instance_4'],
                                 'row_ids': ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1',
-                                            'WRI_RS00025_CDS_1'],
-                                'values': [[0.1, 0.2, 0.3, 0.4],
-                                           [0.5, 0.6, 0.7, 0.8],
-                                           [0.9, 1, 1.1, 1.2]]},
+                                            'WRI_RS00025_CDS_1', 'WRI_RS00030_CDS_1',
+                                            'WRI_RS00035_CDS_1'],
+                                'values': [[1, 2, 3, 4],
+                                           [50, 60, 70, 80],
+                                           [9, 10, 11, 12],
+                                           [9, 10, 11, 12],
+                                           [9, 10, 11, 12]]},
                        'description': 'test_desc',
                        'row_attributemapping_ref': row_attributemapping_ref,
                        'row_mapping': {'WRI_RS00010_CDS_1': 'WRI_RS00010_CDS_1',
                                        'WRI_RS00015_CDS_1': 'WRI_RS00015_CDS_1',
-                                       'WRI_RS00025_CDS_1': 'WRI_RS00025_CDS_1'},
+                                       'WRI_RS00025_CDS_1': 'WRI_RS00025_CDS_1',
+                                       'WRI_RS00030_CDS_1': 'WRI_RS00030_CDS_1',
+                                       'WRI_RS00035_CDS_1': 'WRI_RS00035_CDS_1'},
                        'row_normalization': 'test_row_normalization',
                        'scale': 'log2',
                        'search_attributes': ['Scientist | Marie Currie',
@@ -263,22 +270,11 @@ class kb_AmpliconTest(unittest.TestCase):
         self.assertEqual(mds_util.scratch, self.cfg.get('scratch'))
 
     @patch.object(DataFileUtil, "file_to_shock", side_effect=mock_file_to_shock)
-    def test_run_pca_ok(self, file_to_shock):
+    def test_run_metaMDS_ok(self, file_to_shock):
         self.start_test()
         self.loadExpressionMatrix()
 
-        # params = {'input_obj_ref': self.expr_matrix_ref,
-        #           'workspace_name': self.wsName,
-        #           'pca_matrix_name': 'test_pca_matrix_obj',
-        #           'scale_size_by': {
-        #                 "attribute_size": ["test_attribute_1"]
-        #             },
-        #           'color_marker_by': {
-        #                 "attribute_color": ["test_attribute_2"]
-        #             },
-        #           'n_components': 3,
-        #           'dimension': 'row'}
-
+        # testing col dimension
         params = {'workspace_name': self.wsName,
                   'input_obj_ref': self.expr_matrix_ref,
                   'n_components': 3,
@@ -303,16 +299,59 @@ class kb_AmpliconTest(unittest.TestCase):
         pca_data = self.dfu.get_objects(
                     {"object_refs": [pca_matrix_ref]})['data'][0]['data']
 
-        self.assertTrue('distance_matrix' in pca_data)
-        self.assertTrue('mds_parameters' in pca_data)
-        self.assertTrue('original_matrix_ref' in pca_data)
-        self.assertTrue('distance_matrix' in pca_data)
-        self.assertTrue('rotation_matrix' in pca_data)
-        self.assertTrue('site_ordination' in pca_data)
-        self.assertTrue('species_ordination' in pca_data)
+        expected_values = ['distance_matrix', 'mds_parameters', 'original_matrix_ref',
+                           'rotation_matrix', 'site_ordination', 'species_ordination']
+        self.assertTrue(set(expected_values) <= set(pca_data.keys()))
 
-        expected_row_ids = ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1', 'WRI_RS00025_CDS_1']
+        expected_row_ids = ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1', 'WRI_RS00025_CDS_1',
+                            'WRI_RS00030_CDS_1', 'WRI_RS00035_CDS_1']
         expected_col_ids = ['instance_1', 'instance_2', 'instance_3', 'instance_4']
+
+        result_row_ids = [value[0] for value in pca_data.get('species_ordination').get('values')]
+        result_col_ids = [value[0] for value in pca_data.get('site_ordination').get('values')]
+        self.assertCountEqual(result_row_ids, expected_row_ids)
+        self.assertCountEqual(result_col_ids, expected_col_ids)
+
+        mds_dir = '/kb/module/work/tmp/mds_output'
+        expected_files = ['dist_matrix.csv', 'dist_matrix.json', 'mds_script.R',
+                          'others.json', 'plotly_fig.html', 'site_ordination.csv',
+                          'site_ordination.json', 'species_ordination.csv',
+                          'species_ordination.json', 'test_ExpressionMatrix.csv',
+                          'usr_plt_name.ps']
+        self.assertTrue(set(expected_files) <= set(os.listdir(mds_dir)))
+
+        # testing row dimension
+        params = {'workspace_name': self.wsName,
+                  'input_obj_ref': self.expr_matrix_ref,
+                  'n_components': 3,
+                  'max_iter': 20,
+                  'plot_script': 'plot(my_data.mds,type="t",display="sites")',
+                  'plot_type': 'ps',
+                  'plot_name': '',
+                  'attribute_mapping_obj_ref': self.row_attributemapping_ref,
+                  'scale_size_by': {'attribute_size': ["test_attribute_1"]},
+                  'color_marker_by': {'attribute_color': ['test_attribute_2']},
+                  'mds_matrix_name': 'output_mds_from_obj',
+                  'dimension': 'row'}
+
+        ret = self.serviceImpl.run_metaMDS(self.ctx, params)[0]
+
+        self.assertTrue('report_name' in ret)
+        self.assertTrue('report_ref' in ret)
+        self.assertTrue('mds_ref' in ret)
+
+        pca_matrix_ref = ret.get('mds_ref')
+
+        pca_data = self.dfu.get_objects(
+                    {"object_refs": [pca_matrix_ref]})['data'][0]['data']
+
+        expected_values = ['distance_matrix', 'mds_parameters', 'original_matrix_ref',
+                           'rotation_matrix', 'site_ordination', 'species_ordination']
+        self.assertTrue(set(expected_values) <= set(pca_data.keys()))
+
+        expected_row_ids = ['instance_1', 'instance_2', 'instance_3', 'instance_4']
+        expected_col_ids = ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1', 'WRI_RS00025_CDS_1',
+                            'WRI_RS00030_CDS_1', 'WRI_RS00035_CDS_1']
 
         result_row_ids = [value[0] for value in pca_data.get('species_ordination').get('values')]
         result_col_ids = [value[0] for value in pca_data.get('site_ordination').get('values')]
