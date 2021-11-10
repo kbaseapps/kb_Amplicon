@@ -417,8 +417,9 @@ class MDSUtils:
 
             if self.scale_size_by is not None:
                 if self.associated_matrix_obj_ref is not None:
-                    matrix_data = self.dfu.get_objects({
-                        'object_refs': [self.associated_matrix_obj_ref]})['data'][0]['data']['data']
+                    matrix_obj = self.dfu.get_objects({
+                        'object_refs': [self.associated_matrix_obj_ref]})['data'][0]['data']
+                    matrix_data = matrix_obj['data']
 
                     size_data = list()
                     if self.dimension == 'col':
@@ -585,7 +586,8 @@ class MDSUtils:
             logging.info('ERROR: both color and scale are same field. scale set to None')
             self.scale_size_by = None
 
-        if self.attribute_mapping_obj_ref is not None or self.associated_matrix_obj_ref is not None:
+        if (self.attribute_mapping_obj_ref is not None or
+                self.associated_matrix_obj_ref is not None):
             mdf = self._get_metadata_from_obj()
         elif self.metadata_file is not None:
             mdf = self._get_metadata_from_file()
