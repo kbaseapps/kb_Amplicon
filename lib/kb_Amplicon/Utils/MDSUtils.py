@@ -10,8 +10,6 @@ import re
 import subprocess
 
 import pandas as pd
-import plotly.offline as pyo
-import plotly.graph_objs as go
 import plotly.express as px
 from plotly.offline import plot
 
@@ -347,7 +345,6 @@ class MDSUtils:
             visualization_content += 'src="{}" '.format(os.path.basename(mds_plot))
             visualization_content += 'style="border:none;"></iframe>\n<p></p>\n'
 
-
         with open(result_file_path, 'w') as result_file:
             with open(os.path.join(os.path.dirname(__file__), 'templates', 'mds_template.html'),
                       'r') as report_template_file:
@@ -580,7 +577,8 @@ class MDSUtils:
         return mdf
 
     def _plot_with_grouping(self):
-        logging.info('Plotting with grouping: "{}", and "{}"'.format(self.color_marker_by, self.scale_size_by))
+        logging.info('Plotting with grouping: "{}", and "{}"'.format(
+            self.color_marker_by, self.scale_size_by))
 
         # Both can not be the same right now.. mdf is now new pd would lead to problems
         if self.color_marker_by == self.scale_size_by:
@@ -592,10 +590,11 @@ class MDSUtils:
         elif self.metadata_file is not None:
             mdf = self._get_metadata_from_file()
         else:
-            FileNotFoundError('No metadata file was specified')
+            raise ValueError('No metadata file was specified')
 
         # Get site data from previously saved file
-        site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"), index_col=0)
+        site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"),
+                                    index_col=0)
         logging.info('SITE_ORDIN_DF:\n {}'.format(site_ordin_df))
 
         # Check if metadata file is valid for this method
@@ -603,9 +602,10 @@ class MDSUtils:
             try:
                 mdf.loc[sample]
             except KeyError:
-                raise KeyError('One or more samples in site_ordination is not found in chosen metadata obj. If you ran '
-                               'this using files, you might need to transpose the data in your files so samples are '
-                               'rows and OTU are columns.')
+                raise KeyError('One or more samples in site_ordination is not found in chosen '
+                               'metadata obj. If you ran this using files, you might need to '
+                               'transpose the data in your files so samples are rows and OTU '
+                               'are columns.')
 
         # Fill site_ordin_df with metadata from mdf
         site_ordin_df['color'] = None
@@ -622,9 +622,11 @@ class MDSUtils:
             fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="color", size="size",
                              hover_name=site_ordin_df.index)
         elif self.color_marker_by is not None:
-            fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="color", hover_name=site_ordin_df.index)
+            fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="color",
+                             hover_name=site_ordin_df.index)
         elif self.scale_size_by is not None:
-            fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", size="size", hover_name=site_ordin_df.index)
+            fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", size="size",
+                             hover_name=site_ordin_df.index)
 
         # Save plotly_fig.html and return path
         plotly_html_file_path = os.path.join(self.output_dir, "plotly_fig.html")
@@ -714,14 +716,14 @@ class MDSUtils:
         mds_ref = self._save_mds_matrix(workspace_name, input_obj_ref, mds_matrix_name,
                                         dist_matrix_df, mds_params_df, site_ordin_df,
                                         species_ordin_df)
-        returnVal = {'mds_ref': mds_ref}
+        return_val = {'mds_ref': mds_ref}
 
         # generating report
         report_output = self._generate_mds_report(mds_ref, self.output_dir,
                                                   workspace_name, n_components)
 
-        returnVal.update(report_output)
-        return returnVal
+        return_val.update(report_output)
+        return return_val
 
     def run_metaMDS_with_file(self, params):
         """
@@ -749,8 +751,8 @@ class MDSUtils:
             try:
                 self.color_marker_by = self.color_marker_by['attribute_color'][0]
             except KeyError:
-                raise KeyError('Expected dictionary with key "attribute_color" containing a list of one element. '
-                               'Instead found: {}'.format(self.color_marker_by))
+                raise KeyError('Expected dictionary with key "attribute_color" containing a list '
+                               'of one element. Instead found: {}'.format(self.color_marker_by))
         self.scale_size_by = params.get('scale_size_by')
         if self.scale_size_by is not None:
             if self.scale_size_by.get('attribute_size'):
@@ -775,8 +777,8 @@ class MDSUtils:
                     err_msg += 'associated with Matrix column'
                     raise ValueError(err_msg)
             else:
-                raise KeyError('Expected dictionary with key "attribute_size" containing a list of one element. '
-                               'Instead found: {}'.format(self.scale_size_by))
+                raise KeyError('Expected dictionary with key "attribute_size" containing a list '
+                               'of one element. Instead found: {}'.format(self.scale_size_by))
 
         rscrpt_file = self._build_rMDS_script(params)
         logging.info('--->\nR script file has been written to {}'.format(rscrpt_file))

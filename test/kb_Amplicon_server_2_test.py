@@ -366,7 +366,6 @@ class kb_AmpliconTest(unittest.TestCase):
                           'usr_plt_name.ps']
         self.assertTrue(set(expected_files) <= set(os.listdir(mds_dir)))
 
-
         # testing only scale_size_by
         params = {'workspace_name': self.wsName,
                   'input_obj_ref': self.expr_matrix_ref,
