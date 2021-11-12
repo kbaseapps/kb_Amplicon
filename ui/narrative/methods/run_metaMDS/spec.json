@@ -1,7 +1,7 @@
 {
     "ver": "0.0.1",
     "authors": [
-        "qzhang", "weise", "james_verasoto"
+        "qzhang", "weise", "james_verasoto", "tgu2"
     ],
     "contact": "http://kbase.us/contact-us/",
     "categories": ["active"],
@@ -26,18 +26,18 @@
             "optional" : false,
             "advanced" : false,
             "allow_multiple" : false,
-            "default_values" : ["row"],
+            "default_values" : ["Column"],
             "field_type" : "dropdown",
             "dropdown_options":
             {
                 "options":
                 [
                 {
-                    "display": "row",
+                    "display": "Row",
                     "value": "row"
                 },
                 {
-                    "display": "column",
+                    "display": "Column",
                     "value": "col"
                 }
                 ]
@@ -89,6 +89,17 @@
           }
         },
         {
+          "id" : "associated_matrix_obj_ref",
+          "optional" : true,
+          "advanced" : false,
+          "allow_multiple" : false,
+          "default_values" : [ "" ],
+          "field_type" : "text",
+          "text_options" : {
+            "valid_ws_types" : ["KBaseMatrices"]
+          }
+        },
+        {
           "id" : "attribute_color",
           "optional" : false,
           "advanced" : true,
@@ -109,7 +120,7 @@
         },
         {
           "id" : "attribute_size",
-          "optional" : false,
+          "optional" : true,
           "advanced" : true,
           "allow_multiple" : false,
           "default_values" : [ "" ],
@@ -120,6 +131,44 @@
               "subdata_included" : ["attributes/[*]/attribute"],
               "path_to_subdata": ["attributes"],
               "selection_id": "attribute"
+              },
+            "multiselection":false,
+            "show_src_obj":false,
+            "allow_custom":false
+          }
+        },
+        {
+          "id" : "row_size",
+          "optional" : true,
+          "advanced" : true,
+          "allow_multiple" : false,
+          "default_values" : [ "" ],
+          "field_type" : "textsubdata",
+          "textsubdata_options" : {
+            "subdata_selection": {
+              "parameter_id" : "associated_matrix_obj_ref",
+              "subdata_included" : ["data/row_ids"],
+              "path_to_subdata": ["data", "row_ids"],
+              "selection_id": "id"
+              },
+            "multiselection":false,
+            "show_src_obj":false,
+            "allow_custom":false
+          }
+        },
+        {
+          "id" : "col_size",
+          "optional" : true,
+          "advanced" : true,
+          "allow_multiple" : false,
+          "default_values" : [ "" ],
+          "field_type" : "textsubdata",
+          "textsubdata_options" : {
+            "subdata_selection": {
+              "parameter_id" : "associated_matrix_obj_ref",
+              "subdata_included" : ["data/col_ids"],
+              "path_to_subdata": ["data", "col_ids"],
+              "selection_id": "id"
               },
             "multiselection":false,
             "show_src_obj":false,
@@ -194,7 +243,9 @@
     {
       "id": "scale_size_by",
       "parameters": [
-        "attribute_size"
+        "attribute_size",
+        "row_size",
+        "col_size"
       ],
       "optional": true,
       "allow_multiple": false,
@@ -220,8 +271,15 @@
                     "target_property" : "attribute_mapping_obj_ref",
                     "target_type_transform": "resolved-ref"
                 },{
+                    "input_parameter" : "associated_matrix_obj_ref",
+                    "target_property" : "associated_matrix_obj_ref",
+                    "target_type_transform": "resolved-ref"
+                },{
                     "input_parameter" : "n_components",
                     "target_property" : "n_components"
+                },{
+                    "input_parameter" : "dimension",
+                    "target_property" : "dimension"
                 },{
                     "input_parameter" : "max_iter",
                     "target_property" : "max_iter"
