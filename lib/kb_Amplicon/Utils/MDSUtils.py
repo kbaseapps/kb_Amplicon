@@ -758,7 +758,7 @@ class MDSUtils:
 
             common_idx = associated_matrix_df.index.intersection(matrix_df.index)
 
-            if common_idx:
+            if len(common_idx):
                 associated_matrix_df = associated_matrix_df.loc[common_idx]
                 associated_matrix_data_file = os.path.join(self.output_dir,
                                                            associated_matrix_name + '.csv')
