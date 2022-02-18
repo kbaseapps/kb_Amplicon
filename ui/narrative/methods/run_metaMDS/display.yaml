@@ -196,13 +196,6 @@ description : |
 
     <p>8)     <u>MDS Matrix Object Name:</u> Name of the PCAMatrix Object that will be created.</p>
 
-    <p><b>Advanced Inputs:</b></p>
-
-    <p>9)     <u>Script for plotting results:</u> If user chooses to input their own plotting script.</p>
-
-    <p>10)     <u>Plot type:</u>Further specifications for user input plotting script to specify type.</p>
-
-    <p>11)     <u>Plot file name:</u> Specify plot name for the user plotting script.</p>
 
     <p><b>Plotting:</b></p>
 
@@ -218,16 +211,13 @@ description : |
     <p><b>Output Files:</b></p>
 
     <p>1.  	dist_matrix.csv
-    <br>2.  	dist_matrix.json
-    <br>3.  	mds_script.R
-    <br>4.  	[AmpliconMatrix].csv
-    <br>5.  	others.json
-    <br>6.  	plotly_fig.html
-    <br>7.  	Rplots.pdf
-    <br>8.  	site_ordination.csv
-    <br>9.  	site_ordination.json
-    <br>10.   	species_ordination.csv
-    <br>11.   	species_ordination.json</p>
+    <br>2.  	mds_script.R
+    <br>3.  	[AmpliconMatrix].csv
+    <br>4.  	others.json
+    <br>5.  	plotly_fig.html
+    <br>6.  	Rplots.pdf
+    <br>7.  	site_ordination.csv
+    <br>8.   	species_ordination.csv</p>
 
     <p><b>Tools:</b></p>
 

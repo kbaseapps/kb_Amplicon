@@ -4,7 +4,7 @@
 1.0.0
 -----
 * first release version
-* implemented perform MDS analysis functionality
+* Perform NMDS Analysis app - performs non-metric multidimensional scaling analysis, NMDS, on an Matrix object.
 
 0.0.0
 -----
