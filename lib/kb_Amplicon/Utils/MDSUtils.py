@@ -663,6 +663,13 @@ class MDSUtils:
                 raise ValueError(err_msg)
             logging.info('input matrix:\n {}'.format(matrix_df))
 
+            all_zero_rows = matrix_df.index[(matrix_df == 0).all(1)].tolist()
+
+            if all_zero_rows:
+                err_msg = 'Please alter the input matrix so that no observation has all 0s\n'
+                err_msg += 'Observations with all zero values:\n{}'.format(all_zero_rows)
+                raise ValueError(err_msg)
+
             matrix_data_file = os.path.join(self.output_dir, obj_name + '.csv')
             with open(matrix_data_file, 'w') as m_file:
                 matrix_df.to_csv(m_file, sep='\t')
