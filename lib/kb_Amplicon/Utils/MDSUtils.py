@@ -68,13 +68,6 @@ class MDSUtils:
                             os.path.join(self.output_dir, os.path.basename(data_file_path)))
 
         associated_matrix_file = params.get('associated_matrix_file')
-        if associated_matrix_file:
-            exists = os.path.isfile(os.path.join(self.output_dir, os.path.basename(
-                associated_matrix_file)))
-            if not exists:
-                shutil.copyfile(data_file_path,
-                                os.path.join(self.output_dir, os.path.basename(
-                                    associated_matrix_file)))
 
         n_components = params.get('n_components', 2)
         max_iter = params.get('max_iter', 300)
@@ -122,7 +115,7 @@ class MDSUtils:
         if associated_matrix_file:
             mds_scrpt += 'chem_data <- read.table("' + associated_matrix_file + \
                  '",header=TRUE,row.names=1,sep="")\n'
-            mds_scrpt += '(fit <- envfit(vg_data.mds,chem_data))\n'
+            mds_scrpt += '(fit <- envfit(vg_data.mds,chem_data,perm=999))\n'
             mds_scrpt += 'vectors <- scores(fit, "vectors")\n'
             mds_scrpt += 'write.csv(vectors,file="vectors.csv",row.names=TRUE,na="")\n'
 
@@ -564,8 +557,11 @@ class MDSUtils:
             mdf.to_csv(m_file, sep='\t')
 
         # Get site data from previously saved file
-        site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"),
-                                    index_col=0)
+        site_ordin_file = os.path.join(self.output_dir, "site_ordination.csv")
+
+        if not os.path.exists(site_ordin_file):
+            raise ValueError('failed to generate metaMDS points')
+        site_ordin_df = pd.read_csv(site_ordin_file, index_col=0)
         logging.info('SITE_ORDIN_DF:\n {}'.format(site_ordin_df))
 
         # Check if metadata file is valid for this method
@@ -598,6 +594,21 @@ class MDSUtils:
         elif scale_size_by is not None:
             fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", size="size",
                              hover_name=site_ordin_df.index)
+
+        # add vectors
+        vector_file = os.path.join(self.output_dir, "vectors.csv")
+
+        if os.path.exists(vector_file):
+            vector_df = pd.read_csv(vector_file, index_col=0)
+            logging.info('VECTOR_DF:\n {}'.format(vector_df))
+
+            for idx, row in vector_df.iterrows():
+                x, y, name = row[0], row[1], idx
+                fig.add_shape(type='line', x0=0, y0=0, x1=x, y1=y,
+                              line=dict(color="RoyalBlue", width=0.5))
+
+                fig.add_annotation(x=x, y=y, ax=0, ay=0, xanchor="center", yanchor="bottom",
+                                   text=name,)
 
         # Save plotly_fig.html and return path
         plotly_html_file_path = os.path.join(self.output_dir, "plotly_fig.html")
