@@ -559,6 +559,10 @@ class MDSUtils:
         else:
             raise ValueError('No metadata file was specified')
 
+        grouping_meta_file = os.path.join(self.output_dir, 'grouping_meta.csv')
+        with open(grouping_meta_file, 'w') as m_file:
+            mdf.to_csv(m_file, sep='\t')
+
         # Get site data from previously saved file
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"),
                                     index_col=0)
