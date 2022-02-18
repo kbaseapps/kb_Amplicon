@@ -12,6 +12,7 @@ import subprocess
 import pandas as pd
 import plotly.express as px
 from plotly.offline import plot
+import plotly.graph_objs as go
 
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.KBaseReportClient import KBaseReport
@@ -601,14 +602,22 @@ class MDSUtils:
         if os.path.exists(vector_file):
             vector_df = pd.read_csv(vector_file, index_col=0)
             logging.info('VECTOR_DF:\n {}'.format(vector_df))
-
+            loading_x, loading_y, loading_text = list(), list(), list()
             for idx, row in vector_df.iterrows():
                 x, y, name = row[0], row[1], idx
-                fig.add_shape(type='line', x0=0, y0=0, x1=x, y1=y,
-                              line=dict(color="RoyalBlue", width=0.5))
+                loading_x.extend([0, x])
+                loading_y.extend([0, y])
+                loading_text.extend(['0', name])
 
-                fig.add_annotation(x=x, y=y, ax=0, ay=0, xanchor="center", yanchor="bottom",
-                                   text=name,)
+            fig.add_trace(go.Scatter(
+                            x=loading_x,
+                            y=loading_y,
+                            mode="lines+markers",
+                            name="environmental vectors",
+                            text=loading_text,
+                            textposition="bottom center",
+                            line=dict(color="RoyalBlue", width=0.5)
+                        ))
 
         # Save plotly_fig.html and return path
         plotly_html_file_path = os.path.join(self.output_dir, "plotly_fig.html")
