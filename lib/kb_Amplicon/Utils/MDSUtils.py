@@ -123,9 +123,9 @@ class MDSUtils:
         if associated_matrix_file:
             mds_scrpt += 'chem_data <- read.table("' + associated_matrix_file + \
                  '",header=TRUE,row.names=1,sep="")\n'
-            mds_scrpt += '(fit <- envfit(vg_data.mds, chem_data, perm = 999))\n'
+            mds_scrpt += 'fit <- envfit(vg_data.mds, chem_data, perm = 999)\n'
             mds_scrpt += 'vectors <- scores(fit, "vectors")\n'
-            # mds_scrpt += 'write.csv(vectors,file="vectors.csv",row.names=TRUE,na="")\n'
+            mds_scrpt += 'write.csv(vectors,file="vectors.csv",row.names=TRUE,na="")\n'
 
         # Write JSON in R
         mds_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,' + \
