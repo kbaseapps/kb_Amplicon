@@ -206,9 +206,10 @@ class MDSUtils:
                     ' '.join(rcmd), str(exitCode)))
                 logging.info("Finished calling R.")
             else:
-                logging.info('Error running command: {} Exit Code: '.format(
-                    ' '.join(rcmd), str(exitCode)))
+                logging.info('Error running command: {} Exit Code: {}'.format(' '.join(rcmd),
+                                                                              str(exitCode)))
                 logging.info('\n{}'.format(complete_proc.stderr))
+                logging.info('\n{}'.format(complete_proc.stdout))
         except subprocess.CalledProcessError as sub_e:
             exitCode = -99
             logging.info('Caught subprocess.CalledProcessError {}'.format(sub_e))
