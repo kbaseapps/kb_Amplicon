@@ -111,8 +111,6 @@ class MDSUtils:
         mds_scrpt += 'dims <- vg_data.mds$ndim\n'
         mds_scrpt += 'tries <- vg_data.mds$tries\n'
         mds_scrpt += 'maxits <- vg_data.mds$maxits\n'
-        mds_scrpt += 'func_call <- vg_data.mds$call\n'
-        mds_scrpt += 'mds_data <- vg_data.mds$data\n'
 
         # save the results to the current dir
         # Write CSV in R
@@ -124,46 +122,17 @@ class MDSUtils:
         if associated_matrix_file:
             mds_scrpt += 'chem_data <- read.table("' + associated_matrix_file + \
                  '",header=TRUE,row.names=1,sep="")\n'
-            mds_scrpt += 'chem_data\n'
             mds_scrpt += '(fit <- envfit(vg_data.mds,chem_data))\n'
             mds_scrpt += 'vectors <- scores(fit, "vectors")\n'
             mds_scrpt += 'write.csv(vectors,file="vectors.csv",row.names=TRUE,na="")\n'
 
         # Write JSON in R
-        mds_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,' + \
-                     'auto_unbox=FALSE)\n'
-        mds_scrpt += 'write_json(toJSON(variableScores),path="species_ordination.json",' + \
-                     'pretty=TRUE,auto_unbox=FALSE)\n'
-        mds_scrpt += 'write_json(toJSON(sampleScores),path="site_ordination.json",' + \
-                     'pretty=TRUE,auto_unbox=FALSE)\n'
         mds_scrpt += 'item_name=c("stress","distance_metric","dist_call","converged",' + \
                      '"dimesions","trials","maxits")\n'
         mds_scrpt += 'item_value=c(stress,dist_metric,dist_call,converged,dims,tries,maxits)\n'
         mds_scrpt += 'df <- data.frame(item_name,item_value,stringsAsFactors=FALSE)\n'
         mds_scrpt += 'write_json(toJSON(df),path="others.json",pretty=TRUE,auto_unbox=FALSE)\n'
 
-        # save mds plots
-        '''
-        mds_scrpt += 'bmp(file="saving_mds_plot.bmp",width=580,height=580,units="px",' + \
-                     'res=100, pointsize=12)\n'
-        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
-        mds_scrpt += 'points(vg_data.mds)\n'
-        mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="saving_mds_plot.pdf",width=6,height=6)\n'
-        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
-        mds_scrpt += 'points(vg_data.mds)\n'
-        mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="mds_plot_withlabel.pdf",width=6,height=6)\n'
-        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
-        mds_scrpt += 'ordilabel(vg_data.mds,dis="sites",cex=1.2,font=3,fill="hotpink",col="blue")\n'
-        mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="mds_plot_withcolor.pdf",width=6,height=6)\n'
-        mds_scrpt += 'fig <- ordiplot(vg_data.mds,type="none")\n'
-        mds_scrpt += 'points(fig,"sites",pch=21,col="red",bg="yellow")\n'
-        mds_scrpt += 'points(fig,"species",pch=21,col="green",bg="blue")\n'
-        # mds_scrpt += 'text(fig, "species", col="blue", cex=0.9)\n'
-        mds_scrpt += 'dev.off()\n'
-        '''
         # If there is user input plotting script:
         plt_scrpt = params.get('plot_script', '').lower()
         if plt_scrpt and re.match("^plot\(\s*[a-zA-Z]+.*\)$", plt_scrpt):
@@ -550,6 +519,21 @@ class MDSUtils:
 
         return mdf
 
+    def _plot_without_grouping(self, dimension):
+
+        # Get site data from previously saved file
+        site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"),
+                                    index_col=0)
+        logging.info('SITE_ORDIN_DF:\n {}'.format(site_ordin_df))
+        site_ordin_df.fillna('na', inplace=True)
+
+        fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", hover_name=site_ordin_df.index)
+
+        # Save plotly_fig.html and return path
+        plotly_html_file_path = os.path.join(self.output_dir, "plotly_fig.html")
+        plot(fig, filename=plotly_html_file_path)
+        return plotly_html_file_path
+
     def _plot_with_grouping(self, dimension):
         logging.info('Plotting with grouping: "{}", and "{}"'.format(
             self.color_marker_by, self.scale_size_by))
@@ -672,7 +656,7 @@ class MDSUtils:
                 matrix_df.to_csv(m_file, sep='\t')
 
             params['datafile'] = matrix_data_file
-            exitCode = self.run_metaMDS_with_file(params)
+            exitCode = self.run_metaMDS_with_file(params, matrix_df)
         else:
             err_msg = 'Ooops! [{}] is not supported.\n'.format(obj_type)
             err_msg += 'Please provide a KBaseMatrices object'
@@ -700,7 +684,7 @@ class MDSUtils:
         return_val.update(report_output)
         return return_val
 
-    def run_metaMDS_with_file(self, params):
+    def run_metaMDS_with_file(self, params, matrix_df):
         """
         run_metaMDS_with_file: perform metaMDS analysis on matrix
         :param datafile: a file that contains the matrix data
@@ -772,12 +756,18 @@ class MDSUtils:
                 associated_matrix_df = associated_matrix_df.T
             logging.info('input associated matrix:\n {}'.format(associated_matrix_df))
 
-            associated_matrix_data_file = os.path.join(self.output_dir,
-                                                       associated_matrix_name + '.csv')
-            with open(associated_matrix_data_file, 'w') as m_file:
-                associated_matrix_df.to_csv(m_file, sep='\t')
+            common_idx = associated_matrix_df.index.intersection(matrix_df.index)
 
-            params['associated_matrix_file'] = associated_matrix_data_file
+            if common_idx:
+                associated_matrix_df = associated_matrix_df.loc[common_idx]
+                associated_matrix_data_file = os.path.join(self.output_dir,
+                                                           associated_matrix_name + '.csv')
+                with open(associated_matrix_data_file, 'w') as m_file:
+                    associated_matrix_df.to_csv(m_file, sep='\t')
+
+                params['associated_matrix_file'] = associated_matrix_data_file
+            else:
+                logging.info('associated matrix and input matrix share no common observations')
 
         rscrpt_file = self._build_rMDS_script(params)
         logging.info('--->\nR script file has been written to {}'.format(rscrpt_file))
@@ -787,5 +777,7 @@ class MDSUtils:
         # Make and save plotly fig
         if self.color_marker_by is not None or self.scale_size_by is not None:
             self._plot_with_grouping(dimension)
+        else:
+            self._plot_without_grouping(dimension)
 
         return result
