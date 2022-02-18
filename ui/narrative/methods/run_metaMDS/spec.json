@@ -176,17 +176,6 @@
           }
         },
         {
-            "id" : "plot_script",
-            "optional" : true,
-            "advanced" : true,
-            "allow_multiple" : false,
-            "default_values" : [ "plot(mds_data.mds)" ],
-            "field_type" : "text",
-            "text_options" : {
-              "validate_as" : "text"
-            }
-        },
-        {
             "id" : "plot_type",
             "optional" : true,
             "advanced" : true,
@@ -215,17 +204,6 @@
                       "display": "ps"
                     }
                   ]
-            }
-        },
-        {
-            "id" : "plot_name",
-            "optional" : true,
-            "advanced" : true,
-            "allow_multiple" : false,
-            "default_values" : [ "usrplot" ],
-            "field_type" : "text",
-            "text_options" : {
-              "validate_as" : "text"
             }
         }
     ],
@@ -294,13 +272,13 @@
                     "input_parameter" : "mds_matrix_name",
                     "target_property" : "mds_matrix_name"
                 },{
-                    "input_parameter" : "plot_script",
+                    "constant_value" : "plot(mds_data.mds)",
                     "target_property" : "plot_script"
                 },{
                     "input_parameter" : "plot_type",
                     "target_property" : "plot_type"
                 },{
-                    "input_parameter" : "plot_name",
+                    "constant_value" : "usrplot",
                     "target_property" : "plot_name"
                 }
             ],
