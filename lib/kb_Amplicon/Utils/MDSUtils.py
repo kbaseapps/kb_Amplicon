@@ -58,7 +58,7 @@ class MDSUtils:
         Note: To run the NMDS, we will use the function metaMDS from the vegan package.
         # The metaMDS function requires only a community-by-species matrix.
         """
-        data_file_path = params.get('datafile', None)
+        data_file_path = params.get('datafile')
         if not data_file_path:
             return ''
 
@@ -66,6 +66,15 @@ class MDSUtils:
         if not exists:
             shutil.copyfile(data_file_path,
                             os.path.join(self.output_dir, os.path.basename(data_file_path)))
+
+        associated_matrix_file = params.get('associated_matrix_file')
+        if associated_matrix_file:
+            exists = os.path.isfile(os.path.join(self.output_dir, os.path.basename(
+                associated_matrix_file)))
+            if not exists:
+                shutil.copyfile(data_file_path,
+                                os.path.join(self.output_dir, os.path.basename(
+                                    associated_matrix_file)))
 
         n_components = params.get('n_components', 2)
         max_iter = params.get('max_iter', 300)
@@ -102,8 +111,6 @@ class MDSUtils:
         mds_scrpt += 'dims <- vg_data.mds$ndim\n'
         mds_scrpt += 'tries <- vg_data.mds$tries\n'
         mds_scrpt += 'maxits <- vg_data.mds$maxits\n'
-        mds_scrpt += 'func_call <- vg_data.mds$call\n'
-        mds_scrpt += 'mds_data <- vg_data.mds$data\n'
 
         # save the results to the current dir
         # Write CSV in R
@@ -112,41 +119,20 @@ class MDSUtils:
                      'row.names=TRUE,na="")\n'
         mds_scrpt += 'write.csv(sampleScores,file="site_ordination.csv",row.names=TRUE,na="")\n'
 
+        if associated_matrix_file:
+            mds_scrpt += 'chem_data <- read.table("' + associated_matrix_file + \
+                 '",header=TRUE,row.names=1,sep="")\n'
+            mds_scrpt += '(fit <- envfit(vg_data.mds,chem_data))\n'
+            mds_scrpt += 'vectors <- scores(fit, "vectors")\n'
+            mds_scrpt += 'write.csv(vectors,file="vectors.csv",row.names=TRUE,na="")\n'
+
         # Write JSON in R
-        mds_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,' + \
-                     'auto_unbox=FALSE)\n'
-        mds_scrpt += 'write_json(toJSON(variableScores),path="species_ordination.json",' + \
-                     'pretty=TRUE,auto_unbox=FALSE)\n'
-        mds_scrpt += 'write_json(toJSON(sampleScores),path="site_ordination.json",' + \
-                     'pretty=TRUE,auto_unbox=FALSE)\n'
         mds_scrpt += 'item_name=c("stress","distance_metric","dist_call","converged",' + \
                      '"dimesions","trials","maxits")\n'
         mds_scrpt += 'item_value=c(stress,dist_metric,dist_call,converged,dims,tries,maxits)\n'
         mds_scrpt += 'df <- data.frame(item_name,item_value,stringsAsFactors=FALSE)\n'
         mds_scrpt += 'write_json(toJSON(df),path="others.json",pretty=TRUE,auto_unbox=FALSE)\n'
 
-        # save mds plots
-        '''
-        mds_scrpt += 'bmp(file="saving_mds_plot.bmp",width=580,height=580,units="px",' + \
-                     'res=100, pointsize=12)\n'
-        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
-        mds_scrpt += 'points(vg_data.mds)\n'
-        mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="saving_mds_plot.pdf",width=6,height=6)\n'
-        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
-        mds_scrpt += 'points(vg_data.mds)\n'
-        mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="mds_plot_withlabel.pdf",width=6,height=6)\n'
-        mds_scrpt += 'plot(vg_data.mds,type="n",display="sites")\n'
-        mds_scrpt += 'ordilabel(vg_data.mds,dis="sites",cex=1.2,font=3,fill="hotpink",col="blue")\n'
-        mds_scrpt += 'dev.off()\n'
-        mds_scrpt += 'pdf(file="mds_plot_withcolor.pdf",width=6,height=6)\n'
-        mds_scrpt += 'fig <- ordiplot(vg_data.mds,type="none")\n'
-        mds_scrpt += 'points(fig,"sites",pch=21,col="red",bg="yellow")\n'
-        mds_scrpt += 'points(fig,"species",pch=21,col="green",bg="blue")\n'
-        # mds_scrpt += 'text(fig, "species", col="blue", cex=0.9)\n'
-        mds_scrpt += 'dev.off()\n'
-        '''
         # If there is user input plotting script:
         plt_scrpt = params.get('plot_script', '').lower()
         if plt_scrpt and re.match("^plot\(\s*[a-zA-Z]+.*\)$", plt_scrpt):
@@ -180,6 +166,9 @@ class MDSUtils:
                              'res=100, pointsize=12)\n'
 
             mds_scrpt += plt_scrpt + '\n'
+
+            if associated_matrix_file:
+                mds_scrpt += 'plot(fit)\n'
             mds_scrpt += 'dev.off()\n'
 
         logging.info('R script: {}'.format(mds_scrpt))
@@ -217,9 +206,10 @@ class MDSUtils:
                     ' '.join(rcmd), str(exitCode)))
                 logging.info("Finished calling R.")
             else:
-                logging.info('Error running command: {} Exit Code: '.format(
-                    ' '.join(rcmd), str(exitCode)))
+                logging.info('Error running command: {} Exit Code: {}'.format(' '.join(rcmd),
+                                                                              str(exitCode)))
                 logging.info('\n{}'.format(complete_proc.stderr))
+                logging.info('\n{}'.format(complete_proc.stdout))
         except subprocess.CalledProcessError as sub_e:
             exitCode = -99
             logging.info('Caught subprocess.CalledProcessError {}'.format(sub_e))
@@ -391,18 +381,20 @@ class MDSUtils:
 
         return report_output
 
-    def _get_metadata_from_obj(self):
+    def _get_metadata_from_obj(self, dimension,
+                               associated_matrix_obj_ref, attribute_mapping_obj_ref,
+                               color_marker_by, scale_size_by):
         logging.info('Retrieving metadata..')
 
         # build color_marker_by only
-        if self.color_marker_by is not None:
+        if color_marker_by is not None:
 
-            attr_obj = self.dfu.get_objects({'object_refs': [self.attribute_mapping_obj_ref]})
+            attr_obj = self.dfu.get_objects({'object_refs': [attribute_mapping_obj_ref]})
             attr_l = attr_obj['data'][0]['data']['attributes']
 
             color_index = None
             for i in range(len(attr_l)):
-                if attr_l[i]['attribute'] == self.color_marker_by:
+                if attr_l[i]['attribute'] == color_marker_by:
                     color_index = i
                     break
 
@@ -411,19 +403,19 @@ class MDSUtils:
             for sample in mdf_indx:
                 color_data.append(attr_obj['data'][0]['data']['instances'][sample][color_index])
 
-            mdf = pd.DataFrame(index=mdf_indx, columns=[self.color_marker_by, self.scale_size_by])
+            mdf = pd.DataFrame(index=mdf_indx, columns=[color_marker_by, scale_size_by])
             if color_index is not None:
-                mdf[self.color_marker_by] = color_data
+                mdf[color_marker_by] = color_data
 
-            if self.scale_size_by is not None:
-                if self.associated_matrix_obj_ref is not None:
+            if scale_size_by is not None:
+                if associated_matrix_obj_ref is not None:
                     matrix_obj = self.dfu.get_objects({
-                        'object_refs': [self.associated_matrix_obj_ref]})['data'][0]['data']
+                        'object_refs': [associated_matrix_obj_ref]})['data'][0]['data']
                     matrix_data = matrix_obj['data']
 
                     size_data = list()
-                    if self.dimension == 'col':
-                        size_index = matrix_data['row_ids'].index(self.scale_size_by)
+                    if dimension == 'col':
+                        size_index = matrix_data['row_ids'].index(scale_size_by)
                         for sample in mdf_indx:
                             if sample in matrix_data['col_ids']:
                                 idx = matrix_data['col_ids'].index(sample)
@@ -431,7 +423,7 @@ class MDSUtils:
                             else:
                                 size_data.append(None)
                     else:
-                        size_index = matrix_data['col_ids'].index(self.scale_size_by)
+                        size_index = matrix_data['col_ids'].index(scale_size_by)
                         for sample in mdf_indx:
                             if sample in matrix_data['row_ids']:
                                 idx = matrix_data['row_ids'].index(sample)
@@ -439,11 +431,11 @@ class MDSUtils:
                             else:
                                 size_data.append(None)
 
-                    mdf[self.scale_size_by] = size_data
+                    mdf[scale_size_by] = size_data
                 else:
                     size_index = None
                     for i in range(len(attr_l)):
-                        if attr_l[i]['attribute'] == self.scale_size_by:
+                        if attr_l[i]['attribute'] == scale_size_by:
                             size_index = i
                             break
 
@@ -456,40 +448,40 @@ class MDSUtils:
                         except Exception:
                             logging.info(
                                 'ERROR: scaling is not int or float. scaling has been dropped')
-                            self.scale_size_by = None
+                            scale_size_by = None
                             size_index = None
 
                     if size_index is not None:
-                        mdf[self.scale_size_by] = size_data
+                        mdf[scale_size_by] = size_data
         # build scale_size_by only
         else:
-            if self.associated_matrix_obj_ref is not None:
+            if associated_matrix_obj_ref is not None:
                 matrix_data = self.dfu.get_objects({
-                    'object_refs': [self.associated_matrix_obj_ref]})['data'][0]['data']['data']
-                if self.dimension == 'col':
-                    size_index = matrix_data['row_ids'].index(self.scale_size_by)
+                    'object_refs': [associated_matrix_obj_ref]})['data'][0]['data']['data']
+                if dimension == 'col':
+                    size_index = matrix_data['row_ids'].index(scale_size_by)
                     size_data = matrix_data['values'][size_index]
 
                     mdf = pd.DataFrame(index=matrix_data['col_ids'],
-                                       columns=[self.color_marker_by, self.scale_size_by])
-                    mdf[self.scale_size_by] = size_data
+                                       columns=[color_marker_by, scale_size_by])
+                    mdf[scale_size_by] = size_data
 
                 else:
-                    size_index = matrix_data['col_ids'].index(self.scale_size_by)
+                    size_index = matrix_data['col_ids'].index(scale_size_by)
                     size_data = list()
                     for value in matrix_data['values']:
                         size_data.append(value[size_index])
 
                     mdf = pd.DataFrame(index=matrix_data['col_ids'],
-                                       columns=[self.color_marker_by, self.scale_size_by])
-                    mdf[self.scale_size_by] = size_data
+                                       columns=[color_marker_by, scale_size_by])
+                    mdf[scale_size_by] = size_data
             else:
-                attr_obj = self.dfu.get_objects({'object_refs': [self.attribute_mapping_obj_ref]})
+                attr_obj = self.dfu.get_objects({'object_refs': [attribute_mapping_obj_ref]})
                 attr_l = attr_obj['data'][0]['data']['attributes']
 
                 size_index = None
                 for i in range(len(attr_l)):
-                    if attr_l[i]['attribute'] == self.scale_size_by:
+                    if attr_l[i]['attribute'] == scale_size_by:
                         size_index = i
                         break
 
@@ -502,66 +494,19 @@ class MDSUtils:
                     except Exception:
                         err_msg = 'ERROR: scaling is not int or float. scaling has been dropped'
                         logging.info(err_msg)
-                        self.scale_size_by = None
+                        scale_size_by = None
                         size_index = None
 
                 mdf = pd.DataFrame(index=mdf_indx,
-                                   columns=[self.color_marker_by, self.scale_size_by])
+                                   columns=[color_marker_by, scale_size_by])
                 if size_index is not None:
-                    mdf[self.scale_size_by] = size_data
+                    mdf[scale_size_by] = size_data
 
         logging.info('created metadata df:\n{}'.format(mdf))
 
         return mdf
 
-    # def _get_metadata_from_obj(self):
-    #     """
-    #     Get metadata from obj and return simplified pd.DataFrame
-    #     :return:
-    #     """
-
-    #     logging.info('Retrieving metadata..')
-
-    #     # KBase obj data
-    #     mdf = self.dfu.get_objects({'object_refs': [self.attribute_mapping_obj_ref]})
-    #     attr_l = mdf['data'][0]['data']['attributes']
-
-    #     # Get index location in mdf(metadata) of chosen color and scale
-    #     color_index = None
-    #     size_index = None
-    #     for i in range(len(attr_l)):
-    #         if attr_l[i]['attribute'] == self.color_marker_by:
-    #             color_index = i
-    #         if attr_l[i]['attribute'] == self.scale_size_by:
-    #             size_index = i
-
-    #     # Make list of color and scale data
-    #     color_data = []
-    #     size_data = []
-    #     mdf_indx = mdf['data'][0]['data']['instances'].keys()
-    #     for sample in mdf_indx:
-    #         if color_index is not None:
-    #             color_data.append(mdf['data'][0]['data']['instances'][sample][color_index])
-    #         if size_index is not None:
-    #             try:
-    #                 size_data.append(float(mdf['data'][0]['data']['instances'][sample][size_index]))
-    #             except:
-    #                 logging.info('ERROR: scaling is not int or float. scaling has been dropped')
-    #                 self.scale_size_by = None
-    #                 size_index = None
-
-    #     # mdf is now new pd.DataFrame that only includes needed data
-    #     mdf = pd.DataFrame(index=mdf_indx, columns=[self.color_marker_by, self.scale_size_by])
-    #     if color_index is not None:
-    #         mdf[self.color_marker_by] = color_data
-    #     if size_index is not None:
-    #         mdf[self.scale_size_by] = size_data
-
-    #     logging.info('created metadata df:\n{}'.format(mdf))
-
-    #     return mdf
-
-    def _get_metadata_from_file(self):
+    def _get_metadata_from_file(self, metadata_file, color_marker_by, scale_size_by):
         """
         Get metadata from file and return simplified pd.DataFrame
         :return:
@@ -569,30 +514,54 @@ class MDSUtils:
 
         logging.info('Retrieving metadata..')
 
-        mdf = pd.read_csv(self.metadata_file, sep='\t', index_col=0)
+        mdf = pd.read_csv(metadata_file, sep='\t', index_col=0)
 
         logging.info('MDF: {}'.format(mdf))
 
-        mdf = mdf[[self.color_marker_by, self.scale_size_by]]
+        mdf = mdf[[color_marker_by, scale_size_by]]
 
         return mdf
 
-    def _plot_with_grouping(self):
-        logging.info('Plotting with grouping: "{}", and "{}"'.format(
-            self.color_marker_by, self.scale_size_by))
+    def _plot_without_grouping(self, dimension):
+
+        # Get site data from previously saved file
+        site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"),
+                                    index_col=0)
+        logging.info('SITE_ORDIN_DF:\n {}'.format(site_ordin_df))
+        site_ordin_df.fillna('na', inplace=True)
+
+        fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", hover_name=site_ordin_df.index)
+
+        # Save plotly_fig.html and return path
+        plotly_html_file_path = os.path.join(self.output_dir, "plotly_fig.html")
+        plot(fig, filename=plotly_html_file_path)
+        return plotly_html_file_path
+
+    def _plot_with_grouping(self, dimension, associated_matrix_obj_ref, attribute_mapping_obj_ref,
+                            metadata_file, color_marker_by, scale_size_by):
+        logging.info('Plotting with grouping: "{}", and "{}"'.format(color_marker_by,
+                                                                     scale_size_by))
 
         # Both can not be the same right now.. mdf is now new pd would lead to problems
-        if self.color_marker_by == self.scale_size_by:
+        if color_marker_by == scale_size_by:
             logging.info('ERROR: both color and scale are same field. scale set to None')
-            self.scale_size_by = None
+            scale_size_by = None
 
-        if (self.attribute_mapping_obj_ref is not None or
-                self.associated_matrix_obj_ref is not None):
-            mdf = self._get_metadata_from_obj()
-        elif self.metadata_file is not None:
-            mdf = self._get_metadata_from_file()
+        if (attribute_mapping_obj_ref is not None or
+                associated_matrix_obj_ref is not None):
+            mdf = self._get_metadata_from_obj(dimension,
+                                              associated_matrix_obj_ref,
+                                              attribute_mapping_obj_ref,
+                                              color_marker_by,
+                                              scale_size_by)
+        elif metadata_file is not None:
+            mdf = self._get_metadata_from_file(metadata_file, color_marker_by, scale_size_by)
         else:
             raise ValueError('No metadata file was specified')
+
+        grouping_meta_file = os.path.join(self.output_dir, 'grouping_meta.csv')
+        with open(grouping_meta_file, 'w') as m_file:
+            mdf.to_csv(m_file, sep='\t')
 
         # Get site data from previously saved file
         site_ordin_df = pd.read_csv(os.path.join(self.output_dir, "site_ordination.csv"),
@@ -613,20 +582,20 @@ class MDSUtils:
         site_ordin_df['color'] = None
         site_ordin_df['size'] = None
         for ID in site_ordin_df.index:
-            site_ordin_df['color'].loc[ID] = mdf[self.color_marker_by].loc[ID]
-            site_ordin_df['size'].loc[ID] = mdf[self.scale_size_by].loc[ID]
+            site_ordin_df['color'].loc[ID] = mdf[color_marker_by].loc[ID]
+            site_ordin_df['size'].loc[ID] = mdf[scale_size_by].loc[ID]
 
         site_ordin_df.fillna('na', inplace=True)
 
         # Plot
-        if self.color_marker_by is not None and self.scale_size_by is not None and all(
+        if color_marker_by is not None and scale_size_by is not None and all(
                 isinstance(x, (int, float)) for x in list(site_ordin_df['size'])):
             fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="color", size="size",
                              hover_name=site_ordin_df.index)
-        elif self.color_marker_by is not None:
+        elif color_marker_by is not None:
             fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", color="color",
                              hover_name=site_ordin_df.index)
-        elif self.scale_size_by is not None:
+        elif scale_size_by is not None:
             fig = px.scatter(site_ordin_df, x="MDS1", y="MDS2", size="size",
                              hover_name=site_ordin_df.index)
 
@@ -694,12 +663,19 @@ class MDSUtils:
                 raise ValueError(err_msg)
             logging.info('input matrix:\n {}'.format(matrix_df))
 
+            all_zero_rows = matrix_df.index[(matrix_df == 0).all(1)].tolist()
+
+            if all_zero_rows:
+                err_msg = 'Please alter the input matrix so that no observation has all 0s\n'
+                err_msg += 'Observations with all zero values:\n{}'.format(all_zero_rows)
+                raise ValueError(err_msg)
+
             matrix_data_file = os.path.join(self.output_dir, obj_name + '.csv')
             with open(matrix_data_file, 'w') as m_file:
                 matrix_df.to_csv(m_file, sep='\t')
 
             params['datafile'] = matrix_data_file
-            exitCode = self.run_metaMDS_with_file(params)
+            exitCode = self.run_metaMDS_with_file(params, matrix_df)
         else:
             err_msg = 'Ooops! [{}] is not supported.\n'.format(obj_type)
             err_msg += 'Please provide a KBaseMatrices object'
@@ -727,7 +703,7 @@ class MDSUtils:
         return_val.update(report_output)
         return return_val
 
-    def run_metaMDS_with_file(self, params):
+    def run_metaMDS_with_file(self, params, matrix_df):
         """
         run_metaMDS_with_file: perform metaMDS analysis on matrix
         :param datafile: a file that contains the matrix data
@@ -744,43 +720,71 @@ class MDSUtils:
         logging.info('--->\nrunning run_metaMDS_with_file with input\n' +
                      'params:\n{}'.format(json.dumps(params, indent=1)))
 
-        self.attribute_mapping_obj_ref = params.get('attribute_mapping_obj_ref')
-        self.metadata_file = params.get('metadata_file')
-        self.color_marker_by = params.get('color_marker_by')
-        self.associated_matrix_obj_ref = None
+        attribute_mapping_obj_ref = params.get('attribute_mapping_obj_ref')
+        metadata_file = params.get('metadata_file')
+        color_marker_by = params.get('color_marker_by')
+        associated_matrix_obj_ref = params.get('associated_matrix_obj_ref')
 
-        if self.color_marker_by is not None:
+        dimension = params.get('dimension', 'col')
+
+        if color_marker_by is not None:
             try:
-                self.color_marker_by = self.color_marker_by['attribute_color'][0]
+                color_marker_by = color_marker_by['attribute_color'][0]
             except KeyError:
                 raise KeyError('Expected dictionary with key "attribute_color" containing a list '
-                               'of one element. Instead found: {}'.format(self.color_marker_by))
-        self.scale_size_by = params.get('scale_size_by')
-        if self.scale_size_by is not None:
-            if self.scale_size_by.get('attribute_size'):
-                self.scale_size_by = self.scale_size_by['attribute_size'][0]
-            elif self.scale_size_by.get('row_size'):
-                self.scale_size_by = self.scale_size_by['row_size'][0]
-                self.associated_matrix_obj_ref = params.get('associated_matrix_obj_ref')
-                self.dimension = params.get('dimension', 'col')
+                               'of one element. Instead found: {}'.format(color_marker_by))
+        scale_size_by = params.get('scale_size_by')
+        if scale_size_by is not None:
+            if scale_size_by.get('attribute_size'):
+                scale_size_by = scale_size_by['attribute_size'][0]
+            elif scale_size_by.get('row_size'):
+                scale_size_by = scale_size_by['row_size'][0]
 
-                if self.dimension != 'col':
+                if dimension != 'col':
                     err_msg = 'Please choose Column dimension in order for the plot size to be '
                     err_msg += 'associated with Matrix row'
                     raise ValueError(err_msg)
 
-            elif self.scale_size_by.get('col_size'):
-                self.scale_size_by = self.scale_size_by['col_size'][0]
-                self.associated_matrix_obj_ref = params.get('associated_matrix_obj_ref')
-                self.dimension = params.get('dimension', 'col')
+            elif scale_size_by.get('col_size'):
+                scale_size_by = scale_size_by['col_size'][0]
 
-                if self.dimension != 'row':
+                if dimension != 'row':
                     err_msg = 'Please choose Row dimension in order for the plot size to be '
                     err_msg += 'associated with Matrix column'
                     raise ValueError(err_msg)
             else:
                 raise KeyError('Expected dictionary with key "attribute_size" containing a list '
-                               'of one element. Instead found: {}'.format(self.scale_size_by))
+                               'of one element. Instead found: {}'.format(scale_size_by))
+
+        if associated_matrix_obj_ref:
+
+            associated_matrix_obj = self.dfu.get_objects({
+                            'object_refs': [associated_matrix_obj_ref]})['data'][0]
+
+            associated_matrix_data = associated_matrix_obj['data']
+            associated_matrix_name = associated_matrix_obj['info'][1]
+
+            values = associated_matrix_data['data']['values']
+            row_ids = associated_matrix_data['data']['row_ids']
+            col_ids = associated_matrix_data['data']['col_ids']
+            associated_matrix_df = pd.DataFrame(values, index=row_ids, columns=col_ids)
+            # Transpose DataFrame
+            if dimension == 'col':
+                associated_matrix_df = associated_matrix_df.T
+            logging.info('input associated matrix:\n {}'.format(associated_matrix_df))
+
+            common_idx = associated_matrix_df.index.intersection(matrix_df.index)
+
+            if len(common_idx):
+                associated_matrix_df = associated_matrix_df.loc[common_idx]
+                associated_matrix_data_file = os.path.join(self.output_dir,
+                                                           associated_matrix_name + '.csv')
+                with open(associated_matrix_data_file, 'w') as m_file:
+                    associated_matrix_df.to_csv(m_file, sep='\t')
+
+                params['associated_matrix_file'] = associated_matrix_data_file
+            else:
+                logging.info('associated matrix and input matrix share no common observations')
 
         rscrpt_file = self._build_rMDS_script(params)
         logging.info('--->\nR script file has been written to {}'.format(rscrpt_file))
@@ -788,7 +792,13 @@ class MDSUtils:
         result = self._execute_r_script(rscrpt_file)
 
         # Make and save plotly fig
-        if self.color_marker_by is not None or self.scale_size_by is not None:
-            self._plot_with_grouping()
+        if color_marker_by is not None or scale_size_by is not None:
+            self._plot_with_grouping(dimension,
+                                     associated_matrix_obj_ref,
+                                     attribute_mapping_obj_ref,
+                                     metadata_file,
+                                     color_marker_by, scale_size_by)
+        else:
+            self._plot_without_grouping(dimension)
 
         return result
