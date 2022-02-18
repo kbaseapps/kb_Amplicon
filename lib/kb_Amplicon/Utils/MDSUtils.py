@@ -122,12 +122,12 @@ class MDSUtils:
             mds_scrpt += 'write.csv(vectors,file="vectors.csv",row.names=TRUE,na="")\n'
 
         # Write JSON in R
-        # mds_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,' + \
-        #              'auto_unbox=FALSE)\n'
-        # mds_scrpt += 'write_json(toJSON(variableScores),path="species_ordination.json",' + \
-        #              'pretty=TRUE,auto_unbox=FALSE)\n'
-        # mds_scrpt += 'write_json(toJSON(sampleScores),path="site_ordination.json",' + \
-        #              'pretty=TRUE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,' + \
+                     'auto_unbox=FALSE)\n'
+        mds_scrpt += 'write_json(toJSON(variableScores),path="species_ordination.json",' + \
+                     'pretty=TRUE,auto_unbox=FALSE)\n'
+        mds_scrpt += 'write_json(toJSON(sampleScores),path="site_ordination.json",' + \
+                     'pretty=TRUE,auto_unbox=FALSE)\n'
         mds_scrpt += 'item_name=c("stress","distance_metric","dist_call","converged",' + \
                      '"dimesions","trials","maxits")\n'
         mds_scrpt += 'item_value=c(stress,dist_metric,dist_call,converged,dims,tries,maxits)\n'
