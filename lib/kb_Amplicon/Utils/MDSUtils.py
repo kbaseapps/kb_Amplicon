@@ -68,6 +68,12 @@ class MDSUtils:
                             os.path.join(self.output_dir, os.path.basename(data_file_path)))
 
         associated_matrix_file = params.get('associated_matrix_file')
+        exists = os.path.isfile(os.path.join(self.output_dir, os.path.basename(
+            associated_matrix_file)))
+        if not exists:
+            shutil.copyfile(data_file_path,
+                            os.path.join(self.output_dir, os.path.basename(
+                                associated_matrix_file)))
 
         n_components = params.get('n_components', 2)
         max_iter = params.get('max_iter', 300)
@@ -119,7 +125,7 @@ class MDSUtils:
                  '",header=TRUE,row.names=1,sep="")\n'
             mds_scrpt += '(fit <- envfit(vg_data.mds, chem_data, perm = 999))\n'
             mds_scrpt += 'vectors <- scores(fit, "vectors")\n'
-            mds_scrpt += 'write.csv(vectors,file="vectors.csv",row.names=TRUE,na="")\n'
+            # mds_scrpt += 'write.csv(vectors,file="vectors.csv",row.names=TRUE,na="")\n'
 
         # Write JSON in R
         mds_scrpt += 'write_json(toJSON(dist_matrix),path="dist_matrix.json",pretty=TRUE,' + \
