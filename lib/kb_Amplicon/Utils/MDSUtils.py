@@ -198,8 +198,8 @@ class MDSUtils:
 
             mds_scrpt += plt_scrpt + '\n'
 
-            # if associated_matrix_file:
-            #     mds_scrpt += 'plot(fit)\n'
+            if associated_matrix_file:
+                mds_scrpt += 'plot(fit)\n'
             mds_scrpt += 'dev.off()\n'
 
         logging.info('R script: {}'.format(mds_scrpt))
