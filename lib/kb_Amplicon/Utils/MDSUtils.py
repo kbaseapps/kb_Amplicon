@@ -104,8 +104,8 @@ class MDSUtils:
         mds_scrpt += 'dims <- vg_data.mds$ndim\n'
         mds_scrpt += 'tries <- vg_data.mds$tries\n'
         mds_scrpt += 'maxits <- vg_data.mds$maxits\n'
-        # mds_scrpt += 'func_call <- vg_data.mds$call\n'
-        # mds_scrpt += 'mds_data <- vg_data.mds$data\n'
+        mds_scrpt += 'func_call <- vg_data.mds$call\n'
+        mds_scrpt += 'mds_data <- vg_data.mds$data\n'
 
         # save the results to the current dir
         # Write CSV in R
@@ -190,8 +190,8 @@ class MDSUtils:
 
             mds_scrpt += plt_scrpt + '\n'
 
-            if associated_matrix_file:
-                mds_scrpt += 'plot(fit)\n'
+            # if associated_matrix_file:
+            #     mds_scrpt += 'plot(fit)\n'
             mds_scrpt += 'dev.off()\n'
 
         logging.info('R script: {}'.format(mds_scrpt))
