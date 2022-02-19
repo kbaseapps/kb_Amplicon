@@ -532,7 +532,8 @@ class MDSUtils:
         return plotly_html_file_path
 
     def _plot_with_grouping(self, dimension, associated_matrix_obj_ref, attribute_mapping_obj_ref,
-                            metadata_file, color_marker_by, scale_size_by):
+                            metadata_file, color_marker_by, scale_size_by, highlight,
+                            only_highlight):
         logging.info('Plotting with grouping: "{}", and "{}"'.format(color_marker_by,
                                                                      scale_size_by))
 
@@ -603,20 +604,38 @@ class MDSUtils:
             vector_df = pd.read_csv(vector_file, index_col=0)
             logging.info('VECTOR_DF:\n {}'.format(vector_df))
             loading_x, loading_y, loading_text = list(), list(), list()
+            highlight_x, highlight_y, highlight_text = list(), list(), list()
             for idx, row in vector_df.iterrows():
                 x, y, name = row[0], row[1], idx
-                loading_x.extend([0, x])
-                loading_y.extend([0, y])
-                loading_text.extend(['0', name])
+
+                if name in highlight:
+                    highlight_x.extend([0, x])
+                    highlight_y.extend([0, y])
+                    highlight_text.extend(['0', name])
+                else:
+                    loading_x.extend([0, x])
+                    loading_y.extend([0, y])
+                    loading_text.extend(['0', name])
+
+            if not (highlight and only_highlight):
+                fig.add_trace(go.Scatter(
+                                x=loading_x,
+                                y=loading_y,
+                                mode="lines+markers",
+                                name="environmental vectors",
+                                text=loading_text,
+                                textposition="bottom center",
+                                line=dict(color="RoyalBlue", width=0.5)
+                            ))
 
             fig.add_trace(go.Scatter(
-                            x=loading_x,
-                            y=loading_y,
+                            x=highlight_x,
+                            y=highlight_y,
                             mode="lines+markers",
-                            name="environmental vectors",
-                            text=loading_text,
+                            name="selected environmental vectors",
+                            text=highlight_text,
                             textposition="bottom center",
-                            line=dict(color="RoyalBlue", width=0.5)
+                            line=dict(color="RoyalRed", width=0.5)
                         ))
 
         # Save plotly_fig.html and return path
@@ -758,14 +777,15 @@ class MDSUtils:
             if scale_size_by.get('attribute_size'):
                 scale_size_by = scale_size_by['attribute_size'][0]
             elif scale_size_by.get('row_size'):
+                highlight = scale_size_by.get('highlight_row')
                 scale_size_by = scale_size_by['row_size'][0]
-
                 if dimension != 'col':
                     err_msg = 'Please choose Column dimension in order for the plot size to be '
                     err_msg += 'associated with Matrix row'
                     raise ValueError(err_msg)
 
             elif scale_size_by.get('col_size'):
+                highlight = scale_size_by.get('highlight_col')
                 scale_size_by = scale_size_by['col_size'][0]
 
                 if dimension != 'row':
@@ -817,7 +837,8 @@ class MDSUtils:
                                      associated_matrix_obj_ref,
                                      attribute_mapping_obj_ref,
                                      metadata_file,
-                                     color_marker_by, scale_size_by)
+                                     color_marker_by, scale_size_by,
+                                     highlight, params.get('only_highlight', True))
         else:
             self._plot_without_grouping(dimension)
 

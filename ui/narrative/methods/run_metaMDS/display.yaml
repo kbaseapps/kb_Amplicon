@@ -72,23 +72,11 @@ parameters :
         short-hint : |
             Maximun Number of Iterations
 
-    plot_script :
+    only_highlight :
         ui-name : |
-            script for plotting results
+            Plot Selected Vectors Only
         short-hint : |
-            script for plotting results
-
-    plot_type :
-        ui-name : |
-            plot type
-        short-hint : |
-            plot type
-
-    plot_name :
-        ui-name : |
-            plot file name
-        short-hint : |
-            plot file name
+            plot environmental vectors for only selected observations from the associated matrix
 
     attribute_color:
         ui-name: |
@@ -114,6 +102,14 @@ parameters :
         long-hint: |
             Select a row from associated matrix for plot sizing (valid when perform MDS on Column)
 
+    highlight_row:
+        ui-name: |
+            Highlight Matrix Row
+        short-hint: |
+            Highlight selected matrix row (environmental vectors) in the plot
+        long-hint: |
+            Highlight selected matrix row (environmental vectors) in the plot
+
     col_size:
         ui-name: |
             Associated Matrix Column
@@ -121,6 +117,14 @@ parameters :
             Select a column from associated matrix for plot sizing (valid when perform MDS on Row)
         long-hint: |
             Select a column from associated matrix for plot sizing (valid when perform MDS on Row)
+
+    highlight_col:
+        ui-name: |
+            Highlight Matrix Column
+        short-hint: |
+            Highlight selected matrix column (environmental vectors) in the plot
+        long-hint: |
+            Highlight selected matrix column (environmental vectors) in the plot
 
     mds_matrix_name:
         ui-name: |
