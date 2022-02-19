@@ -262,6 +262,106 @@ class kb_AmpliconTest(unittest.TestCase):
         self.assertEqual(mds_util.scratch, self.cfg.get('scratch'))
 
     @patch.object(DataFileUtil, "file_to_shock", side_effect=mock_file_to_shock)
+    def test_run_metaMDS_scale_by_attri_plot_associated_matrix_without_color(self, file_to_shock):
+        self.start_test()
+        self.loadExpressionMatrix()
+
+        # testing col dimension with linked matrix
+        params = {'workspace_name': self.wsName,
+                  'input_obj_ref': self.expr_matrix_ref,
+                  'n_components': 3,
+                  'max_iter': 20,
+                  'plot_script': 'plot(my_data.mds,type="t",display="sites")',
+                  'plot_type': 'ps',
+                  'plot_name': '',
+                  'attribute_mapping_obj_ref': self.col_attributemapping_ref,
+                  'associated_matrix_obj_ref': self.asso_matrix_ref,
+                  'scale_size_by': {'attribute_size': ["test_attribute_1"]},
+                  # 'color_marker_by': {'attribute_color': ['test_attribute_2']},
+                  'mds_matrix_name': 'output_mds_from_obj',
+                  'dimension': 'col'}
+
+        ret = self.serviceImpl.run_metaMDS(self.ctx, params)[0]
+
+        self.assertTrue('report_name' in ret)
+        self.assertTrue('report_ref' in ret)
+        self.assertTrue('mds_ref' in ret)
+
+        pca_matrix_ref = ret.get('mds_ref')
+
+        pca_data = self.dfu.get_objects({"object_refs": [pca_matrix_ref]})['data'][0]['data']
+
+        expected_values = ['distance_matrix', 'mds_parameters', 'original_matrix_ref',
+                           'rotation_matrix', 'site_ordination', 'species_ordination']
+        self.assertTrue(set(expected_values) <= set(pca_data.keys()))
+
+        expected_row_ids = ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1', 'WRI_RS00025_CDS_1',
+                            'WRI_RS00030_CDS_1', 'WRI_RS00035_CDS_1']
+        expected_col_ids = ['instance_1', 'instance_2', 'instance_3', 'instance_4']
+
+        result_row_ids = [value[0] for value in pca_data.get('species_ordination').get('values')]
+        result_col_ids = [value[0] for value in pca_data.get('site_ordination').get('values')]
+        self.assertCountEqual(result_row_ids, expected_row_ids)
+        self.assertCountEqual(result_col_ids, expected_col_ids)
+
+        mds_dir = '/kb/module/work/tmp/mds_output'
+        expected_files = ['dist_matrix.csv', 'mds_script.R', 'others.json',
+                          'plotly_fig.html', 'site_ordination.csv', 'species_ordination.csv',
+                          'test_ExpressionMatrix.csv',
+                          'usr_plt_name.ps']
+        self.assertTrue(set(expected_files) <= set(os.listdir(mds_dir)))
+
+    @patch.object(DataFileUtil, "file_to_shock", side_effect=mock_file_to_shock)
+    def test_run_metaMDS_scale_by_attri_plot_associated_matrix(self, file_to_shock):
+        self.start_test()
+        self.loadExpressionMatrix()
+
+        # testing col dimension with linked matrix
+        params = {'workspace_name': self.wsName,
+                  'input_obj_ref': self.expr_matrix_ref,
+                  'n_components': 3,
+                  'max_iter': 20,
+                  'plot_script': 'plot(my_data.mds,type="t",display="sites")',
+                  'plot_type': 'ps',
+                  'plot_name': '',
+                  'attribute_mapping_obj_ref': self.col_attributemapping_ref,
+                  'associated_matrix_obj_ref': self.asso_matrix_ref,
+                  'scale_size_by': {'attribute_size': ["test_attribute_1"]},
+                  'color_marker_by': {'attribute_color': ['test_attribute_2']},
+                  'mds_matrix_name': 'output_mds_from_obj',
+                  'dimension': 'col'}
+
+        ret = self.serviceImpl.run_metaMDS(self.ctx, params)[0]
+
+        self.assertTrue('report_name' in ret)
+        self.assertTrue('report_ref' in ret)
+        self.assertTrue('mds_ref' in ret)
+
+        pca_matrix_ref = ret.get('mds_ref')
+
+        pca_data = self.dfu.get_objects({"object_refs": [pca_matrix_ref]})['data'][0]['data']
+
+        expected_values = ['distance_matrix', 'mds_parameters', 'original_matrix_ref',
+                           'rotation_matrix', 'site_ordination', 'species_ordination']
+        self.assertTrue(set(expected_values) <= set(pca_data.keys()))
+
+        expected_row_ids = ['WRI_RS00010_CDS_1', 'WRI_RS00015_CDS_1', 'WRI_RS00025_CDS_1',
+                            'WRI_RS00030_CDS_1', 'WRI_RS00035_CDS_1']
+        expected_col_ids = ['instance_1', 'instance_2', 'instance_3', 'instance_4']
+
+        result_row_ids = [value[0] for value in pca_data.get('species_ordination').get('values')]
+        result_col_ids = [value[0] for value in pca_data.get('site_ordination').get('values')]
+        self.assertCountEqual(result_row_ids, expected_row_ids)
+        self.assertCountEqual(result_col_ids, expected_col_ids)
+
+        mds_dir = '/kb/module/work/tmp/mds_output'
+        expected_files = ['dist_matrix.csv', 'mds_script.R', 'others.json',
+                          'plotly_fig.html', 'site_ordination.csv', 'species_ordination.csv',
+                          'test_ExpressionMatrix.csv',
+                          'usr_plt_name.ps']
+        self.assertTrue(set(expected_files) <= set(os.listdir(mds_dir)))
+
+    @patch.object(DataFileUtil, "file_to_shock", side_effect=mock_file_to_shock)
     def test_run_metaMDS_with_linked_matrix_ok(self, file_to_shock):
         self.start_test()
         self.loadExpressionMatrix()
