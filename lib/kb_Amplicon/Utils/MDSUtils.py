@@ -612,6 +612,9 @@ class MDSUtils:
                     highlight_x.extend([0, x])
                     highlight_y.extend([0, y])
                     highlight_text.extend(['0', name])
+
+                    fig.add_annotation(x=x, y=y, ax=0, ay=0, xanchor="center", yanchor="bottom",
+                                       text=name, font=dict(color="mediumvioletred"))
                 else:
                     loading_x.extend([0, x])
                     loading_y.extend([0, y])
