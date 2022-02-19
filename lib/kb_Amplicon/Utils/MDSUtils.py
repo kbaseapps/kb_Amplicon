@@ -635,7 +635,7 @@ class MDSUtils:
                             name="selected environmental vectors",
                             text=highlight_text,
                             textposition="bottom center",
-                            line=dict(color="RoyalRed", width=0.5)
+                            line=dict(color="mediumvioletred", width=0.5)
                         ))
 
         # Save plotly_fig.html and return path
