@@ -635,7 +635,7 @@ class MDSUtils:
                             name="selected environmental vectors",
                             text=highlight_text,
                             textposition="bottom center",
-                            line=dict(color="mediumvioletred", width=0.5)
+                            line=dict(color="mediumvioletred", width=1.5)
                         ))
 
         # Save plotly_fig.html and return path
@@ -773,11 +773,12 @@ class MDSUtils:
                 raise KeyError('Expected dictionary with key "attribute_color" containing a list '
                                'of one element. Instead found: {}'.format(color_marker_by))
         scale_size_by = params.get('scale_size_by')
+        highlight = list()
         if scale_size_by is not None:
             if scale_size_by.get('attribute_size'):
                 scale_size_by = scale_size_by['attribute_size'][0]
             elif scale_size_by.get('row_size'):
-                highlight = scale_size_by.get('highlight_row')
+                highlight = scale_size_by.get('highlight_row', list())
                 scale_size_by = scale_size_by['row_size'][0]
                 if dimension != 'col':
                     err_msg = 'Please choose Column dimension in order for the plot size to be '
@@ -785,7 +786,7 @@ class MDSUtils:
                     raise ValueError(err_msg)
 
             elif scale_size_by.get('col_size'):
-                highlight = scale_size_by.get('highlight_col')
+                highlight = scale_size_by.get('highlight_col', list())
                 scale_size_by = scale_size_by['col_size'][0]
 
                 if dimension != 'row':
