@@ -375,6 +375,118 @@ class MDSUtils:
 
         return report_output
 
+    def _get_asso_matrix_meta(self, associated_matrix_obj_ref, dimension, scale_size_by,
+                              mdf_indx, mdf):
+        logging.info('Getting metadata from associated matrix')
+
+        matrix_data = self.dfu.get_objects({
+            'object_refs': [associated_matrix_obj_ref]})['data'][0]['data']['data']
+
+        size_data = list()
+        if dimension == 'col':
+            size_index = matrix_data['row_ids'].index(scale_size_by)
+            for sample in mdf_indx:
+                if sample in matrix_data['col_ids']:
+                    idx = matrix_data['col_ids'].index(sample)
+                    size_data.append(matrix_data['values'][size_index][idx])
+                else:
+                    size_data.append(None)
+        else:
+            size_index = matrix_data['col_ids'].index(scale_size_by)
+            for sample in mdf_indx:
+                if sample in matrix_data['row_ids']:
+                    idx = matrix_data['row_ids'].index(sample)
+                    size_data.append(matrix_data['values'][idx][size_index])
+                else:
+                    size_data.append(None)
+
+        mdf[scale_size_by] = size_data
+
+    def _get_asso_matrix_meta_obj_size_only(self, associated_matrix_obj_ref, dimension,
+                                            scale_size_by, color_marker_by):
+
+        logging.info('Getting metadata from associated matrix')
+
+        matrix_data = self.dfu.get_objects({
+            'object_refs': [associated_matrix_obj_ref]})['data'][0]['data']['data']
+        if dimension == 'col':
+            size_index = matrix_data['row_ids'].index(scale_size_by)
+            size_data = matrix_data['values'][size_index]
+
+            mdf = pd.DataFrame(index=matrix_data['col_ids'],
+                               columns=[color_marker_by, scale_size_by])
+            mdf[scale_size_by] = size_data
+
+        else:
+            size_index = matrix_data['col_ids'].index(scale_size_by)
+            size_data = list()
+            for value in matrix_data['values']:
+                size_data.append(value[size_index])
+
+            mdf = pd.DataFrame(index=matrix_data['col_ids'],
+                               columns=[color_marker_by, scale_size_by])
+            mdf[scale_size_by] = size_data
+
+        return mdf
+
+    def _get_attribute_meta(self, attr_obj, attr_l, scale_size_by, mdf_indx, mdf):
+
+        logging.info('Getting metadata from attribute mapping')
+
+        size_index = None
+        for i in range(len(attr_l)):
+            if attr_l[i]['attribute'] == scale_size_by:
+                size_index = i
+                break
+
+        size_data = []
+        for sample in mdf_indx:
+            try:
+                size_data.append(
+                    float(
+                        attr_obj['data'][0]['data']['instances'][sample][size_index]))
+            except Exception:
+                logging.info(
+                    'ERROR: scaling is not int or float. scaling has been dropped')
+                scale_size_by = None
+                size_index = None
+
+        if size_index is not None:
+            mdf[scale_size_by] = size_data
+
+    def _get_attribute_meta_size_only(self, attribute_mapping_obj_ref,
+                                      scale_size_by, color_marker_by):
+
+        logging.info('Getting metadata from attribute mapping')
+
+        attr_obj = self.dfu.get_objects({'object_refs': [attribute_mapping_obj_ref]})
+        attr_l = attr_obj['data'][0]['data']['attributes']
+
+        size_index = None
+        for i in range(len(attr_l)):
+            if attr_l[i]['attribute'] == scale_size_by:
+                size_index = i
+                break
+
+        size_data = []
+        mdf_indx = attr_obj['data'][0]['data']['instances'].keys()
+        for sample in mdf_indx:
+            try:
+                size_data.append(float(
+                    attr_obj['data'][0]['data']['instances'][sample][size_index]))
+            except Exception:
+                err_msg = 'ERROR: scaling is not int or float. scaling has been dropped'
+                logging.info(err_msg)
+                scale_size_by = None
+                size_index = None
+
+        mdf = pd.DataFrame(index=mdf_indx,
+                           columns=[color_marker_by, scale_size_by])
+        if size_index is not None:
+            mdf[scale_size_by] = size_data
+
+        return mdf
+
     def _get_metadata_from_obj(self, dimension,
                                associated_matrix_obj_ref, attribute_mapping_obj_ref,
                                color_marker_by, scale_size_by):
@@ -403,98 +515,26 @@ class MDSUtils:
 
             if scale_size_by is not None:
                 if associated_matrix_obj_ref is not None:
-                    matrix_obj = self.dfu.get_objects({
-                        'object_refs': [associated_matrix_obj_ref]})['data'][0]['data']
-                    matrix_data = matrix_obj['data']
-
-                    size_data = list()
-                    if dimension == 'col':
-                        size_index = matrix_data['row_ids'].index(scale_size_by)
-                        for sample in mdf_indx:
-                            if sample in matrix_data['col_ids']:
-                                idx = matrix_data['col_ids'].index(sample)
-                                size_data.append(matrix_data['values'][size_index][idx])
-                            else:
-                                size_data.append(None)
-                    else:
-                        size_index = matrix_data['col_ids'].index(scale_size_by)
-                        for sample in mdf_indx:
-                            if sample in matrix_data['row_ids']:
-                                idx = matrix_data['row_ids'].index(sample)
-                                size_data.append(matrix_data['values'][idx][size_index])
-                            else:
-                                size_data.append(None)
-
-                    mdf[scale_size_by] = size_data
+                    try:
+                        self._get_asso_matrix_meta(associated_matrix_obj_ref, dimension,
+                                                   scale_size_by, mdf_indx, mdf)
+                    except Exception:
+                        self._get_attribute_meta(attr_obj, attr_l, scale_size_by, mdf_indx, mdf)
                 else:
-                    size_index = None
-                    for i in range(len(attr_l)):
-                        if attr_l[i]['attribute'] == scale_size_by:
-                            size_index = i
-                            break
-
-                    size_data = []
-                    for sample in mdf_indx:
-                        try:
-                            size_data.append(
-                                float(
-                                    attr_obj['data'][0]['data']['instances'][sample][size_index]))
-                        except Exception:
-                            logging.info(
-                                'ERROR: scaling is not int or float. scaling has been dropped')
-                            scale_size_by = None
-                            size_index = None
-
-                    if size_index is not None:
-                        mdf[scale_size_by] = size_data
+                    self._get_attribute_meta(attr_obj, attr_l, scale_size_by, mdf_indx, mdf)
         # build scale_size_by only
         else:
             if associated_matrix_obj_ref is not None:
-                matrix_data = self.dfu.get_objects({
-                    'object_refs': [associated_matrix_obj_ref]})['data'][0]['data']['data']
-                if dimension == 'col':
-                    size_index = matrix_data['row_ids'].index(scale_size_by)
-                    size_data = matrix_data['values'][size_index]
-
-                    mdf = pd.DataFrame(index=matrix_data['col_ids'],
-                                       columns=[color_marker_by, scale_size_by])
-                    mdf[scale_size_by] = size_data
-
-                else:
-                    size_index = matrix_data['col_ids'].index(scale_size_by)
-                    size_data = list()
-                    for value in matrix_data['values']:
-                        size_data.append(value[size_index])
-
-                    mdf = pd.DataFrame(index=matrix_data['col_ids'],
-                                       columns=[color_marker_by, scale_size_by])
-                    mdf[scale_size_by] = size_data
+                try:
+                    mdf = self._get_asso_matrix_meta_obj_size_only(associated_matrix_obj_ref,
+                                                                   dimension, scale_size_by,
+                                                                   color_marker_by)
+                except Exception:
+                    mdf = self._get_attribute_meta_size_only(attribute_mapping_obj_ref,
+                                                             scale_size_by, color_marker_by)
             else:
-                attr_obj = self.dfu.get_objects({'object_refs': [attribute_mapping_obj_ref]})
-                attr_l = attr_obj['data'][0]['data']['attributes']
-
-                size_index = None
-                for i in range(len(attr_l)):
-                    if attr_l[i]['attribute'] == scale_size_by:
-                        size_index = i
-                        break
-
-                size_data = []
-                mdf_indx = attr_obj['data'][0]['data']['instances'].keys()
-                for sample in mdf_indx:
-                    try:
-                        size_data.append(float(
-                            attr_obj['data'][0]['data']['instances'][sample][size_index]))
-                    except Exception:
-                        err_msg = 'ERROR: scaling is not int or float. scaling has been dropped'
-                        logging.info(err_msg)
-                        scale_size_by = None
-                        size_index = None
-
-                mdf = pd.DataFrame(index=mdf_indx,
-                                   columns=[color_marker_by, scale_size_by])
-                if size_index is not None:
-                    mdf[scale_size_by] = size_data
+                mdf = self._get_attribute_meta_size_only(attribute_mapping_obj_ref,
+                                                         scale_size_by, color_marker_by)
 
         logging.info('created metadata df:\n{}'.format(mdf))
 
