@@ -160,7 +160,7 @@
           "id" : "highlight_row",
           "optional" : true,
           "advanced" : true,
-          "allow_multiple" : true,
+          "allow_multiple" : false,
           "default_values" : [ "" ],
           "field_type" : "textsubdata",
           "textsubdata_options" : {
@@ -170,7 +170,7 @@
               "path_to_subdata": ["data", "row_ids"],
               "selection_id": "id"
               },
-            "multiselection":false,
+            "multiselection":true,
             "show_src_obj":false,
             "allow_custom":false
           }
@@ -198,7 +198,7 @@
           "id" : "highlight_col",
           "optional" : true,
           "advanced" : true,
-          "allow_multiple" : true,
+          "allow_multiple" : false,
           "default_values" : [ "" ],
           "field_type" : "textsubdata",
           "textsubdata_options" : {
@@ -208,7 +208,7 @@
               "path_to_subdata": ["data", "col_ids"],
               "selection_id": "id"
               },
-            "multiselection":false,
+            "multiselection":true,
             "show_src_obj":false,
             "allow_custom":false
           }
