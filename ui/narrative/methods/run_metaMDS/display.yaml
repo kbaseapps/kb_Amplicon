@@ -226,10 +226,12 @@ description : |
     <p><b>Tools:</b></p>
 
     <p>R version 3.6.3
-    <br>Vegan version 2.5-6</p>
-
-    <p><b>Citations:</b></p>
-
-    <p>Minchin, P.R. (1987) An evaluation of relative robustness of techniques for ecological ordinations. Vegetatio 69, 89--107.
-    <br>Vegan Package: https://CRAN.R-project.org/package=vegan
     <br>R Documentation for metaMDS: https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/metaMDS</p>
+    <br>Vegan version 2.5-6</p>
+    <br>Vegan Package: https://CRAN.R-project.org/package=vegan
+
+publications:
+
+    -
+        display-text: |
+            Minchin, P.R. (1987) An evaluation of relative robustness of techniques for ecological ordinations. Vegetatio 69, 89--107.
